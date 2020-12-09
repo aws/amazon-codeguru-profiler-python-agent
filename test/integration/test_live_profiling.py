@@ -12,9 +12,6 @@ from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata,
 TEST_PROFILING_GROUP_NAME = "integrationTest"
 
 
-@pytest.mark.skipif(
-    socket.gethostname().startswith("pb-worker-prod") or socket.gethostname().startswith("coverlay-"),
-    reason="Cannot give PackageBuilder permission to report on our Profiling Group")
 class TestLiveProfiling:
 
     def test_live_profiling(self):
