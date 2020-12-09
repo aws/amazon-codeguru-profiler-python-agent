@@ -72,12 +72,12 @@ class TestAgentConfiguration:
             self.default_value = timedelta(seconds=999)
 
         def test_get_int_value_from(self):
-            assert AgentConfiguration._get_int_value_from("one", self.response) is 1
-            assert AgentConfiguration._get_int_value_from("two", self.response) is 2
+            assert AgentConfiguration._get_int_value_from("one", self.response) == 1
+            assert AgentConfiguration._get_int_value_from("two", self.response) == 2
             assert AgentConfiguration._get_int_value_from("three", self.response) is None
-            assert AgentConfiguration._get_int_value_from("three", self.response, 0) is 0
+            assert AgentConfiguration._get_int_value_from("three", self.response, 0) == 0
             assert AgentConfiguration._get_int_value_from("four", self.response) is None
-            assert AgentConfiguration._get_int_value_from("four", self.response, 999) is 999
+            assert AgentConfiguration._get_int_value_from("four", self.response, 999) == 999
 
         def test_get_interval_from(self):
             assert AgentConfiguration._get_interval_from("one", self.response, self.default_value,
