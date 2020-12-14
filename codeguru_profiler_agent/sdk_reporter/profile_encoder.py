@@ -3,6 +3,8 @@ import gzip
 import io
 import sys
 from functools import lru_cache
+import os
+from pathlib import Path
 
 GZIP_BALANCED_COMPRESSION_LEVEL = 6
 DEFAULT_FRAME_COMPONENT_DELIMITER = ":"
@@ -19,10 +21,19 @@ def _get_module_path(file_path, sys_paths):
     for root in sys_paths:
         if root in file_path:
             module_path = file_path.replace(root, "")
-            if module_path.startswith("/"):
-                module_path = module_path[1:]
             break
-    return module_path.rsplit(".", 1)[0].replace("/", ".")
+
+    # remove suffix
+    module_path = str(Path(module_path).with_suffix(""))
+    # remove drive (applicable for WINDOWS customers)
+    module_path = os.path.splitdrive(module_path)[1]
+
+    module_path = module_path.replace(os.sep, ".")
+
+    if module_path.startswith("."):
+        module_path = module_path[1:]
+
+    return module_path
 
 
 class ProfileEncoder:

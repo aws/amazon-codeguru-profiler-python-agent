@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import platform
 
 import pytest
 from mock import MagicMock
@@ -135,23 +136,45 @@ class TestInsideTheResult(TestSdkProfileEncoder):
                     }
                 })
 
-    def test_it_handles_unicode_escape_correctly(self):
+    @pytest.mark.skipif(platform.system() != "Windows",
+                        reason="This test should only be run on Windows")
+    def test_it_handles_unicode_escape_correctly_in_Windows(self):
         self.profile.add(
             Sample(stacks=[[Frame("bottom_with_path"),
-                            Frame("C:\\User\\ironman\\top", file_path="path\\xs.py", class_name="ClassA")]])
+                           Frame("top", file_path="C:\\User\\ironman\\path\\xs.py", class_name="ClassA")]])
         )
 
         assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_path"] ==
                 {
                     "children": {
-                        "path\\xs:ClassA:C:\\User\\ironman\\top": {
-                            'file': 'path\\xs.py',
+                        "User.ironman.path.xs:ClassA:top": {
+                            'file': 'C:\\User\\ironman\\path\\xs.py',
                             "counts": {
                                 "WALL_TIME": 1
                             }
                         }
                     }
                 })
+
+    @pytest.mark.skipif(platform.system() == "Windows",
+                        reason="This test should not be run on Windows")
+    def test_it_handles_unicode_escape_correctly_in_non_Windows_system(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("bottom_with_path"),
+                           Frame("top", file_path="C:\\User\\ironman\\path\\xs.py", class_name="ClassA")]])
+        )
+
+        assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_path"] ==
+                {
+                    "children": {
+                        "C:\\User\\ironman\\path\\xs:ClassA:top": {
+                            'file': 'C:\\User\\ironman\\path\\xs.py',
+                            "counts": {
+                                "WALL_TIME": 1
+                            }
+                        }
+                    }
+        })
 
     def test_it_includes_file_path_when_available(self):
         self.profile.add(
