@@ -5,17 +5,15 @@ from datetime import timedelta
 from codeguru_profiler_agent.agent_metadata.aws_lambda import AWSLambda
 from codeguru_profiler_agent.aws_lambda.lambda_context import LambdaContext
 
+
 class TestAWSLambda:
     class TestLookUpMetadata:
         class TestWhenContextIsAvailable:
-            @before
-            def before(self):
-                self.context = Mock()
-                self.context.invoked_function_arn = "the_lambda_function_arn"
-
             class TestWhenEnvIsAvailable:
                 @before
                 def before(self):
+                    self.context = Mock()
+                    self.context.invoked_function_arn = "the_lambda_function_arn"
                     self.env = {"AWS_EXECUTION_ENV": "AWS_Lambda_python3.6", "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "2048"}
 
                 def test_it_finds_the_arn(self):
@@ -30,8 +28,7 @@ class TestAWSLambda:
                     subject = AWSLambda.look_up_metadata(self.context, self.env)
                     assert subject.execution_env == "AWS_Lambda_python3.6"
 
-            class TestWhenEnvIsNotAvailable:
-                def test_it_still_returns_at_least_the_arn(self):
+                def test_when_env_is_not_available_it_still_returns_at_least_the_arn(self):
                     subject = AWSLambda.look_up_metadata(self.context, {})
                     assert subject.function_arn == "the_lambda_function_arn"
 
@@ -43,6 +40,8 @@ class TestAWSLambda:
             class TestWhenMemoryEnvIsNotValidInt:
                 @before
                 def before(self):
+                    self.context = Mock()
+                    self.context.invoked_function_arn = "the_lambda_function_arn"
                     self.env = {"AWS_EXECUTION_ENV": "AWS_Lambda_python3.6",
                                 "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "not_a_valid_integer"}
 

@@ -55,13 +55,10 @@ class TestLambdaHandler:
 
     class TestLoadModuleFunction:
         class TestWhenPython38LambdaBootstrapCalls:
-            @before
-            def before(self):
-                self.bootstrap = BootstrapModuleMock()
-
             class TestWhenHandlerEnvIsSetProperly:
                 @before
                 def before(self):
+                    self.bootstrap = BootstrapModuleMock()
                     self.env = {"HANDLER_ENV_NAME_FOR_CODEGURU": "handler_module.handler_function"}
 
                 def test_it_returns_the_handler_function(self):
@@ -76,6 +73,7 @@ class TestLambdaHandler:
             class TestWhenHandlerEnvIsMissing:
                 @before
                 def before(self):
+                    self.bootstrap = BootstrapModuleMock()
                     self.env = {}
 
                 def test_it_throws_value_error(self):
@@ -84,13 +82,10 @@ class TestLambdaHandler:
                         load_handler(self.bootstrap, self.env)
 
         class TestWhenPython36LambdaBootstrapCalls:
-            @before
-            def before(self):
-                self.bootstrap = BootstrapPython36ModuleMock()
-
             class TestWhenHandlerEnvIsSetProperly:
                 @before
                 def before(self):
+                    self.bootstrap = BootstrapPython36ModuleMock()
                     self.env = {"HANDLER_ENV_NAME_FOR_CODEGURU": "handler_module.handler_function"}
                     global init_handler_has_been_called
                     init_handler_has_been_called = False

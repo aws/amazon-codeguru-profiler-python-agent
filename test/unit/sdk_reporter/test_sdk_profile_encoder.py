@@ -18,7 +18,6 @@ from codeguru_profiler_agent.model.sample import Sample
 from codeguru_profiler_agent.sdk_reporter.profile_encoder import ProfileEncoder
 
 
-@pytest.fixture
 def example_profile():
     start_time = 1514764800000
     end_time = 1514772000000
@@ -44,185 +43,91 @@ environment = {
 
 
 class TestSdkProfileEncoder:
-    class TestEncode:
-        @before
-        def before(self, example_profile):
-            self.profile = example_profile
+    def before(self):
+        self.profile = example_profile()
+        self.output_stream = io.BytesIO()
+        self.subject = \
+            ProfileEncoder(gzip=False, environment=environment)
+        self.decoded_json_result = \
+            TestSdkProfileEncoder.decoded_json_result.__get__(self)
+        self._decoded_json_result = None
 
-            self.output_stream = io.BytesIO()
+    def decoded_json_result(self):
+        if not self._decoded_json_result:
+            self.subject.encode(
+                profile=self.profile, output_stream=self.output_stream)
+            self._decoded_json_result = json.loads(
+                self.output_stream.getvalue().decode("utf-8"))
+        return self._decoded_json_result
 
-            self.subject = \
-                ProfileEncoder(gzip=False, environment=environment)
 
-            self.decoded_json_result = \
-                TestSdkProfileEncoder.TestEncode.decoded_json_result.__get__(self)
-            self._decoded_json_result = None
+class TestEncode(TestSdkProfileEncoder):
+    @before
+    def before(self):
+        super().before()
 
-        def decoded_json_result(self):
-            if not self._decoded_json_result:
-                self.subject.encode(
-                    profile=self.profile, output_stream=self.output_stream)
-                self._decoded_json_result = json.loads(
-                    self.output_stream.getvalue().decode("utf-8"))
-            return self._decoded_json_result
+    def test_it_encodes_the_result_as_a_json_file(self):
+        assert (type(self.decoded_json_result()) is dict)
 
-        def test_it_encodes_the_result_as_a_json_file(self):
-            assert (type(self.decoded_json_result()) is dict)
 
-        class TestInsideTheResult:
-            def test_it_includes_the_start_time_from_the_profile_in_epoch_millis(
-                    self):
-                assert (self.decoded_json_result()["start"] == 1514764800000)
+class TestInsideTheResult(TestSdkProfileEncoder):
+    @before
+    def before(self):
+        super().before()
 
-            def test_it_includes_the_end_time_from_the_profile_in_epoch_millis(
-                    self):
-                assert (self.decoded_json_result()["end"] == 1514772000000)
+    def test_it_includes_the_start_time_from_the_profile_in_epoch_millis(
+            self):
+        assert (self.decoded_json_result()["start"] == 1514764800000)
 
-            def test_it_includes_the_agent_info_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["agentInfo"]["type"] ==
-                       agent_metadata.agent_info.agent_type)
-                assert (self.decoded_json_result()["agentMetadata"]["agentInfo"]["version"] ==
-                        agent_metadata.agent_info.version)
+    def test_it_includes_the_end_time_from_the_profile_in_epoch_millis(
+            self):
+        assert (self.decoded_json_result()["end"] == 1514772000000)
 
-            def test_it_includes_the_runtime_version_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["runtimeVersion"] ==
-                        agent_metadata.runtime_version)
+    def test_it_includes_the_agent_info_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["agentInfo"]["type"] ==
+                agent_metadata.agent_info.agent_type)
+        assert (self.decoded_json_result()["agentMetadata"]["agentInfo"]["version"] ==
+                agent_metadata.agent_info.version)
 
-            def test_it_includes_the_fleet_info_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["fleetInfo"] ==
-                        agent_metadata.fleet_info.serialize_to_map())
+    def test_it_includes_the_runtime_version_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["runtimeVersion"] ==
+                agent_metadata.runtime_version)
 
-            def test_it_includes_the_sample_weight_in_the_agent_metadata(self):
-                # Given the example profile, sample_weight = 1 / (1514772000000 - 1514764800000) = ~0.00013888
-                assert (0.000138 < self.decoded_json_result()["agentMetadata"]["sampleWeights"]["WALL_TIME"] < 0.000139)
+    def test_it_includes_the_fleet_info_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["fleetInfo"] ==
+                agent_metadata.fleet_info.serialize_to_map())
 
-            def test_it_includes_profile_duration_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["durationInMs"] == 7200000)
+    def test_it_includes_the_sample_weight_in_the_agent_metadata(self):
+        # Given the example profile, sample_weight = 1 / (1514772000000 - 1514764800000) = ~0.00013888
+        assert (0.000138 < self.decoded_json_result()["agentMetadata"]["sampleWeights"]["WALL_TIME"] < 0.000139)
 
-            def test_it_includes_the_cpu_time_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["cpuTimeInSeconds"] > 0)
+    def test_it_includes_profile_duration_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["durationInMs"] == 7200000)
 
-            def test_it_includes_the_num_threads_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["metrics"]["numThreads"] == 15)
+    def test_it_includes_the_cpu_time_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["cpuTimeInSeconds"] > 0)
 
-            def test_it_includes_the_overhead_ms_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["timeInMs"] == 256)
+    def test_it_includes_the_num_threads_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["metrics"]["numThreads"] == 15)
 
-            def test_it_includes_the_memory_overhead_in_the_agent_metadata(self):
-                assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memory_usage_mb"] > 0)
+    def test_it_includes_the_overhead_ms_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["timeInMs"] == 256)
 
-            def test_it_handles_unicode_frames_correctly(self):
-                self.profile.add(
-                    Sample(stacks=[[Frame("unicode_bottom"), Frame(u"😉"), Frame(u"🙃")]]))
+    def test_it_includes_the_memory_overhead_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memory_usage_mb"] > 0)
 
-                assert (self.decoded_json_result()["callgraph"]["children"][
+    def test_it_handles_unicode_frames_correctly(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("unicode_bottom"), Frame(u"😉"), Frame(u"🙃")]]))
+
+        assert (self.decoded_json_result()["callgraph"]["children"][
                     "unicode_bottom"] == {
-                        "children": {
-                            u"😉": {
-                                "children": {
-                                    u"🙃": {
-                                        "counts": {
-                                            "WALL_TIME": 1
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    })
-
-            def test_it_includes_file_path_when_available(self):
-                self.profile.add(
-                    Sample(stacks=[[Frame("bottom_with_path", file_path="path/file1.py"),
-                                    Frame("middle_with_path", file_path="path/file2.py"),
-                                    Frame("top_without_path")]]))
-
-                assert (self.decoded_json_result()["callgraph"]["children"]["path.file1:bottom_with_path"] ==
-                        {
-                            "children": {
-                                "path.file2:middle_with_path": {
-                                    "children": {
-                                        "top_without_path": {
-                                            "counts": {
-                                                "WALL_TIME": 1
-                                            }
-                                        }
-                                    },
-                                    'file': 'path/file2.py'
-                                }
-                            },
-                            'file': 'path/file1.py'
-                        })
-
-            def test_it_includes_class_name_when_available(self):
-                self.profile.add(
-                    Sample(stacks=[[Frame("bottom_with_path", file_path="path/file1.py", class_name="ClassA"),
-                                    Frame("middle_with_path", file_path="path/file2.py", class_name="ClassB"),
-                                    Frame("top_without_path")]]))
-
-                assert (self.decoded_json_result()["callgraph"]["children"]["path.file1:ClassA:bottom_with_path"] ==
-                        {
-                            "children": {
-                                "path.file2:ClassB:middle_with_path": {
-                                    "children": {
-                                        "top_without_path": {
-                                            "counts": {
-                                                "WALL_TIME": 1
-                                            }
-                                        }
-                                    },
-                                    'file': 'path/file2.py'
-                                }
-                            },
-                            'file': 'path/file1.py'
-                        })
-
-            def test_it_includes_line_when_available(self):
-                self.profile.add(
-                    Sample(stacks=[[Frame("bottom_with_line_no", line_no=123),
-                                    Frame("middle_with_line_no", line_no=234),
-                                    Frame("top_without_line_no")],
-                                   [Frame("bottom_with_line_no", line_no=123),
-                                    Frame("middle_with_line_no", line_no=345),
-                                    Frame("top_without_line_no")]
-                                   ]))
-
-                assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_line_no"] ==
-                        {
-                            "children": {
-                                "middle_with_line_no": {
-                                    "children": {
-                                        "top_without_line_no": {
-                                            "counts": {
-                                                "WALL_TIME": 2
-                                            }
-                                        }
-                                    },
-                                    "line": [234, 345]
-                                }
-                            },
-                            "line": [123]
-                        })
-
-            def test_it_includes_the_call_graph_in_self_time_mode(self):
-                assert (self.decoded_json_result()["callgraph"] == {
                     "children": {
-                        "bottom": {
+                        u"😉": {
                             "children": {
-                                "middle": {
+                                u"🙃": {
                                     "counts": {
                                         "WALL_TIME": 1
-                                    },
-                                    "children": {
-                                        "top": {
-                                            "counts": {
-                                                "WALL_TIME": 1
-                                            }
-                                        },
-                                        "different_top": {
-                                            "counts": {
-                                                "WALL_TIME": 1
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -230,61 +135,179 @@ class TestSdkProfileEncoder:
                     }
                 })
 
-        class TestWhenGzippingIsEnabled:
-            def test_it_gzips_the_result_before_writing_to_the_stream(self):
-                ProfileEncoder(gzip=True, environment=environment).encode(
-                    profile=self.profile, output_stream=self.output_stream)
+    def test_it_handles_unicode_escape_correctly(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("bottom_with_path"),
+                            Frame("C:\\User\\ironman\\top", file_path="path\\xs.py", class_name="ClassA")]])
+        )
 
-                self.output_stream.seek(0)
-                uncompressed_result = gzip.GzipFile(
-                    fileobj=self.output_stream, mode="rb").read()
+        assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_path"] ==
+                {
+                    "children": {
+                        "path\\xs:ClassA:C:\\User\\ironman\\top": {
+                            'file': 'path\\xs.py',
+                            "counts": {
+                                "WALL_TIME": 1
+                            }
+                        }
+                    }
+                })
 
-                assert (len(uncompressed_result) > 0)
+    def test_it_includes_file_path_when_available(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("bottom_with_path", file_path="path/file1.py"),
+                            Frame("middle_with_path", file_path="path/file2.py"),
+                            Frame("top_without_path")]]))
 
-    class TestModulePathExtractor:
-        @before
-        def before(self):
-            self.subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
-                sys_path=["/tmp/TestPythonAgent/site-package/"])
+        assert (self.decoded_json_result()["callgraph"]["children"]["path.file1:bottom_with_path"] ==
+                {
+                    "children": {
+                        "path.file2:middle_with_path": {
+                            "children": {
+                                "top_without_path": {
+                                    "counts": {
+                                        "WALL_TIME": 1
+                                    }
+                                }
+                            },
+                            'file': 'path/file2.py'
+                        }
+                    },
+                    'file': 'path/file1.py'
+                })
 
-        def test_it_removes_root_path(self):
-            assert self.subject\
-                .get_module_path("/tmp/TestPythonAgent/site-package/DummyPackage/dummy") == \
-                   "DummyPackage.dummy"
+    def test_it_includes_class_name_when_available(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("bottom_with_path", file_path="path/file1.py", class_name="ClassA"),
+                            Frame("middle_with_path", file_path="path/file2.py", class_name="ClassB"),
+                            Frame("top_without_path")]]))
 
-        def test_it_returns_same_path_if_no_match_from_sys_paths(self):
-            assert self.subject \
-                       .get_module_path("this/is/clearly/not/in/sys/path/dummy.py") == \
-                   "this.is.clearly.not.in.sys.path.dummy"
+        assert (self.decoded_json_result()["callgraph"]["children"]["path.file1:ClassA:bottom_with_path"] ==
+                {
+                    "children": {
+                        "path.file2:ClassB:middle_with_path": {
+                            "children": {
+                                "top_without_path": {
+                                    "counts": {
+                                        "WALL_TIME": 1
+                                    }
+                                }
+                            },
+                            'file': 'path/file2.py'
+                        }
+                    },
+                    'file': 'path/file1.py'
+                })
 
-        def test_it_removes_longest_root_path_matched_from_sys_path(self):
-            subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
-                sys_path=["/tmp/TestPythonAgent/site-package/", "/tmp/TestPythonAgent/site-package/threading/"])
+    def test_it_includes_line_when_available(self):
+        self.profile.add(
+            Sample(stacks=[[Frame("bottom_with_line_no", line_no=123),
+                            Frame("middle_with_line_no", line_no=234),
+                            Frame("top_without_line_no")],
+                           [Frame("bottom_with_line_no", line_no=123),
+                            Frame("middle_with_line_no", line_no=345),
+                            Frame("top_without_line_no")]
+                           ]))
 
-            assert subject.get_module_path("/tmp/TestPythonAgent/site-package/threading/DummyPackage/dummy") == \
-                   "DummyPackage.dummy"
+        assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_line_no"] ==
+                {
+                    "children": {
+                        "middle_with_line_no": {
+                            "children": {
+                                "top_without_line_no": {
+                                    "counts": {
+                                        "WALL_TIME": 2
+                                    }
+                                }
+                            },
+                            "line": [234, 345]
+                        }
+                    },
+                    "line": [123]
+                })
 
-        class TestCache:
-            @before
-            def before(self):
-                self.dummy_module_extract = MagicMock("dummy_module_extractor")
-                self.subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
-                    sys_path=["/tmp/TestPythonAgent/site-package/"], extractor_fun=self.dummy_module_extract)
+    def test_it_includes_the_call_graph_in_self_time_mode(self):
+        assert (self.decoded_json_result()["callgraph"] == {
+            "children": {
+                "bottom": {
+                    "children": {
+                        "middle": {
+                            "counts": {
+                                "WALL_TIME": 1
+                            },
+                            "children": {
+                                "top": {
+                                    "counts": {
+                                        "WALL_TIME": 1
+                                    }
+                                },
+                                "different_top": {
+                                    "counts": {
+                                        "WALL_TIME": 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
 
-            def test_it_caches_result(self):
-                some_path = "/tmp/TestPythonAgent/site-package/DummyPackage/dummy.py"
-                self.subject.get_module_path(some_path)
-                self.subject.get_module_path(some_path)
 
-                self.dummy_module_extract.assert_called_once_with(
-                    "/tmp/TestPythonAgent/site-package/DummyPackage/dummy.py",
-                    ["/tmp/TestPythonAgent/site-package/"]
-                )
+class TestWhenGzippingIsEnabled(TestSdkProfileEncoder):
+    @before
+    def before(self):
+        super().before()
 
-    def test_debug_pretty_encode_it_returns_a_json_representation_for_a_profile(
-            self, example_profile):
-        result = ProfileEncoder.debug_pretty_encode(profile=example_profile, environment=environment)
+    def test_it_gzips_the_result_before_writing_to_the_stream(self):
+        ProfileEncoder(gzip=True, environment=environment).encode(
+            profile=self.profile, output_stream=self.output_stream)
+
+        self.output_stream.seek(0)
+        uncompressed_result = gzip.GzipFile(
+            fileobj=self.output_stream, mode="rb").read()
+
+        assert (len(uncompressed_result) > 0)
+
+
+class TestModulePathExtractor:
+    @before
+    def before(self):
+        self.subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
+            sys_path=["/tmp/TestPythonAgent/site-package/"])
+
+    def test_it_removes_root_path(self):
+        assert self.subject \
+                   .get_module_path("/tmp/TestPythonAgent/site-package/DummyPackage/dummy") == \
+               "DummyPackage.dummy"
+
+    def test_it_returns_same_path_if_no_match_from_sys_paths(self):
+        assert self.subject \
+                   .get_module_path("this/is/clearly/not/in/sys/path/dummy.py") == \
+               "this.is.clearly.not.in.sys.path.dummy"
+
+    def test_it_removes_longest_root_path_matched_from_sys_path(self):
+        subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
+            sys_path=["/tmp/TestPythonAgent/site-package/", "/tmp/TestPythonAgent/site-package/threading/"])
+
+        assert subject.get_module_path("/tmp/TestPythonAgent/site-package/threading/DummyPackage/dummy") == \
+               "DummyPackage.dummy"
+
+    def test_it_caches_result(self):
+        self.dummy_module_extract = MagicMock("dummy_module_extractor")
+        self.subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(
+            sys_path=["/tmp/TestPythonAgent/site-package/"], extractor_fun=self.dummy_module_extract)
+
+        some_path = "/tmp/TestPythonAgent/site-package/DummyPackage/dummy.py"
+        self.subject.get_module_path(some_path)
+        self.subject.get_module_path(some_path)
+
+        self.dummy_module_extract.assert_called_once_with(
+            "/tmp/TestPythonAgent/site-package/DummyPackage/dummy.py",
+            ["/tmp/TestPythonAgent/site-package/"]
+        )
+
+    def test_debug_pretty_encode_it_returns_a_json_representation_for_a_profile(self):
+        result = ProfileEncoder.debug_pretty_encode(profile=example_profile(), environment=environment)
 
         assert (json.loads(result)["start"] == 1514764800000)
-
-

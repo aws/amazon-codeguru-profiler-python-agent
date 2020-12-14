@@ -84,16 +84,11 @@ class TestScheduler:
             yield
             self.scheduler.stop()
 
-        class TestPause:
-            def test_scheduler_is_paused(self):
-                assert (self.scheduler.is_running())
-                assert (self.scheduler.is_paused())
+        def test_pause_when_scheduler_is_paused(self):
+            assert (self.scheduler.is_running())
+            assert (self.scheduler.is_paused())
 
-        class TestResume:
-            @before
-            def before(self):
-                self.scheduler.resume(block=True)
-
-            def test_scheduler_is_running(self):
-                assert (self.scheduler.is_running())
-                assert (not self.scheduler.is_paused())
+        def test_resume_when_scheduler_is_running(self):
+            self.scheduler.resume(block=True)
+            assert (self.scheduler.is_running())
+            assert (not self.scheduler.is_paused())

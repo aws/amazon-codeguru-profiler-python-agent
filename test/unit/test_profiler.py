@@ -200,10 +200,9 @@ class TestProfiler:
             self.profiler.pause()
             assert self.profiler_runner.pause.called
 
-        class TestExceptionHandling:
-            def test_exceptions_are_caught_and_do_not_propagate(self):
-                self.profiler_runner.pause = throw_exception
-                assert (not self.profiler.pause())
+        def test_exceptions_are_caught_and_do_not_propagate(self):
+            self.profiler_runner.pause = throw_exception
+            assert (not self.profiler.pause())
 
     class TestStr:
         @pytest.fixture(autouse=True)

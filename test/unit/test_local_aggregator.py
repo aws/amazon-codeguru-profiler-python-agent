@@ -39,7 +39,7 @@ def assert_profile_is_reset(profile_factory, clock):
 
 
 class TestLocalAggregator:
-    @before
+
     def before(self):
         self.mock_reporter = MagicMock(name="reporter", spec=SdkReporter)
         self.mock_profile = MagicMock(name="profile", spec=Profile)
@@ -92,242 +92,285 @@ class TestLocalAggregator:
 
         self.move_clock_to = move_clock_to
 
-    class TestAdd:
-        @before
-        def before(self):
-            self.mock_profile.get_memory_usage_bytes = MagicMock(
-                return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
-            self.sample = Sample([["method1", "method2"]])
-            self.move_clock_to(self.reporting_interval - ONE_SECOND)
 
-        def test_adding_sample_to_profile_successfully(self):
+class TestAdd(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.sample = Sample([["method1", "method2"]])
+        self.move_clock_to(self.reporting_interval - ONE_SECOND)
+
+    def test_adding_sample_to_profile_successfully(self):
+        self.subject.add(self.sample)
+
+        self.mock_profile.add.assert_called_once_with(self.sample)
+
+    def test_exception_raised_is_propagated(self):
+        self.mock_profile.add.side_effect = ValueError("Foo")
+        with pytest.raises(ValueError):
             self.subject.add(self.sample)
 
-            self.mock_profile.add.assert_called_once_with(self.sample)
 
-        def test_exception_raised_is_propagated(self):
-            self.mock_profile.add.side_effect = ValueError("Foo")
-            with pytest.raises(ValueError):
-                self.subject.add(self.sample)
+class TestFlushWhenReportingIntervalReached(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.move_clock_to(self.reporting_interval + ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(
+            return_value=False)
 
-    class TestFlush:
-        class TestWhenReportingIntervalReached:
-            @before
-            def before(self):
-                self.mock_profile.get_memory_usage_bytes = MagicMock(
-                    return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
-                self.move_clock_to(self.reporting_interval + ONE_SECOND)
-                self.mock_profile.is_empty = MagicMock(
-                    return_value=False)
+    def test_it_reports(self):
+        self.mock_reporter.report.return_value = True
+        self.subject.flush()
+        self.mock_reporter.report.assert_called_once_with(self.subject.profile)
 
-            def test_it_reports(self):
-                self.mock_reporter.report.return_value = True
-                self.subject.flush()
-                self.mock_reporter.report.assert_called_once_with(self.subject.profile)
+    def test_it_returns_true(self):
+        self.mock_reporter.report.return_value = True
+        assert self.subject.flush()
 
-            def test_it_returns_true(self):
-                self.mock_reporter.report.return_value = True
-                assert self.subject.flush()
+    def test_profile_gets_reset(self):
+        self.mock_reporter.report.return_value = True
 
-            def test_profile_gets_reset(self):
-                self.mock_reporter.report.return_value = True
+        self.subject.flush()
 
-                self.subject.flush()
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
 
-                assert_profile_is_reset(self.mock_profile_factory, self.clock)
+    def test_timer_gets_reset(self):
+        self.mock_reporter.report.return_value = True
 
-            def test_timer_gets_reset(self):
-                self.mock_reporter.report.return_value = True
+        self.subject.flush()
 
-                self.subject.flush()
+        self.timer.reset.assert_called_once()
 
-                self.timer.reset.assert_called_once()
+    def test_it_adds_the_run_profiler_overhead_metric_to_the_profile(
+            self):
+        run_profiler_metric = Metric()
+        run_profiler_metric.add(0.1)
+        self.timer.get_metric.side_effect = \
+            lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
 
-            def test_it_adds_the_run_profiler_overhead_metric_to_the_profile(
-                    self):
-                run_profiler_metric = Metric()
-                run_profiler_metric.add(0.1)
-                self.timer.get_metric.side_effect = \
-                    lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
+        self.subject.flush()
 
-                self.subject.flush()
+        self.mock_profile.set_overhead_ms.assert_called_once_with(duration_timedelta=timedelta(seconds=0.1))
 
-                self.mock_profile.set_overhead_ms.assert_called_once_with(duration_timedelta=timedelta(seconds=0.1))
 
-            class TestWhenProfileIsEmpty:
-                @before
-                def before(self):
-                    self.mock_profile.is_empty = MagicMock(return_value=True)
+class TestFlushWhenProfileIsEmpty(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.move_clock_to(self.reporting_interval + ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(
+            return_value=False)
+        self.mock_profile.is_empty = MagicMock(return_value=True)
 
-                def test_it_does_not_report(self):
-                    self.subject.flush()
+    def test_it_does_not_report(self):
+        self.subject.flush()
 
-                    self.mock_reporter.report.assert_not_called()
+        self.mock_reporter.report.assert_not_called()
 
-                def test_it_resets_the_profile(self):
-                    self.subject.flush()
+    def test_it_resets_the_profile(self):
+        self.subject.flush()
 
-                    assert_profile_is_reset(self.mock_profile_factory, self.clock)
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
 
-                def test_it_resets_the_timer(self):
-                    self.subject.flush()
+    def test_it_resets_the_timer(self):
+        self.subject.flush()
 
-                    self.timer.reset.assert_called_once()
+        self.timer.reset.assert_called_once()
 
-            class TestWhenReportFailed:
-                @before
-                def before(self):
-                    self.mock_reporter.report.return_value = False
 
-                def test_it_resets_the_profile(self):
-                    self.subject.flush()
+class TestFlushWhenReportFailed(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.move_clock_to(self.reporting_interval + ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(
+            return_value=False)
+        self.mock_reporter.report.return_value = False
 
-                    assert_profile_is_reset(self.mock_profile_factory, self.clock)
+    def test_it_resets_the_profile(self):
+        self.subject.flush()
 
-                def test_it_resets_the_timer(self):
-                    self.subject.flush()
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
 
-                    self.timer.reset.assert_called_once()
+    def test_it_resets_the_timer(self):
+        self.subject.flush()
 
-                class TestWhenRetryingReport:
-                    def test_it_updates_the_profiler_overhead_metric_on_the_profile(
-                            self):
-                        run_profiler_metric = Metric()
-                        run_profiler_metric.add(0.1)
-                        self.timer.get_metric.side_effect = \
-                            lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
+        self.timer.reset.assert_called_once()
 
-                        self.subject._is_over_reporting_interval = MagicMock(returnValue=False)
-                        # first failed report
-                        self.subject.flush()
 
-                        # some more time is added to the metric
-                        run_profiler_metric.add(0.3)
+class TestFlushWhenRetryingReport(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.move_clock_to(self.reporting_interval + ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(
+            return_value=False)
+        self.mock_reporter.report.return_value = False
 
-                        # try to report again
-                        self.time_now += timedelta(minutes=10).total_seconds()
-                        self.subject.flush()
-                        self.mock_profile.set_overhead_ms.assert_has_calls([
-                            call(duration_timedelta=timedelta(seconds=0.1)),
-                            call(duration_timedelta=timedelta(seconds=0.4))
-                        ])
+    def test_it_updates_the_profiler_overhead_metric_on_the_profile(
+            self):
+        run_profiler_metric = Metric()
+        run_profiler_metric.add(0.1)
+        self.timer.get_metric.side_effect = \
+            lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
 
-        class TestWhenReportingIntervalNotReached:
-            @before
-            def before(self):
-                self.mock_profile.get_memory_usage_bytes = MagicMock(
-                    return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
-                self.move_clock_to(self.reporting_interval - ONE_SECOND)
-                self.mock_profile.is_empty = MagicMock(
-                    return_value=False)
+        self.subject._is_over_reporting_interval = MagicMock(returnValue=False)
+        # first failed report
+        self.subject.flush()
 
-            def test_it_does_not_report(self):
-                self.mock_reporter.report.return_value = True
-                self.mock_reporter.report.assert_not_called()
+        # some more time is added to the metric
+        run_profiler_metric.add(0.3)
 
-            def test_it_returns_false(self):
-                self.mock_reporter.report.return_value = True
-                assert not self.subject.flush()
+        # try to report again
+        self.time_now += timedelta(minutes=10).total_seconds()
+        self.subject.flush()
+        self.mock_profile.set_overhead_ms.assert_has_calls([
+            call(duration_timedelta=timedelta(seconds=0.1)),
+            call(duration_timedelta=timedelta(seconds=0.4))
+        ])
 
-    class TestForceFlush:
-        @before
-        def before(self):
-            self.mock_profile.get_memory_usage_bytes.return_value = DEFAULT_MEMORY_LIMIT_BYTES - 1
-            self.mock_profile.is_empty = MagicMock(return_value=False)
 
-        class TestWhenMinReportingTimeNotReached:
-            @before
-            def before(self):
-                self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL - ONE_SECOND)
-                self.mock_profile_factory.reset_mock()
+class TestFlushWhenReportingIntervalNotReached(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES - 1)
+        self.move_clock_to(self.reporting_interval - ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(
+            return_value=False)
 
-            def test_it_does_not_report(self):
-                self.subject.flush(force=True)
+    def test_it_does_not_report(self):
+        self.mock_reporter.report.return_value = True
+        self.mock_reporter.report.assert_not_called()
 
-                self.mock_reporter.report.assert_not_called()
+    def test_it_returns_false(self):
+        self.mock_reporter.report.return_value = True
+        assert not self.subject.flush()
 
-            def test_profile_gets_reset(self):
-                self.subject.flush(force=True)
 
-                assert_profile_is_reset(self.mock_profile_factory, self.clock)
+class TestForceFlush(TestLocalAggregator):
 
-            def test_timer_gets_reset(self):
-                self.subject.flush(force=True)
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes.return_value = DEFAULT_MEMORY_LIMIT_BYTES - 1
+        self.mock_profile.is_empty = MagicMock(return_value=False)
 
-                self.timer.reset.assert_called_once()
 
-        class TestWhenMinReportingTimeReached:
-            @before
-            def before(self):
-                self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL + ONE_SECOND)
+class TestWhenMinReportingTimeNotReached(TestForceFlush):
+    @before
+    def before(self):
+        super().before()
+        self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL - ONE_SECOND)
+        self.mock_profile_factory.reset_mock()
 
-            def test_it_reports(self):
-                self.mock_reporter.report = MagicMock(return_value=True)
+    def test_it_does_not_report(self):
+        self.subject.flush(force=True)
 
-                self.subject.flush(force=True)
+        self.mock_reporter.report.assert_not_called()
 
-                self.mock_reporter.report.assert_called_once()
+    def test_profile_gets_reset(self):
+        self.subject.flush(force=True)
 
-            def test_profile_gets_reset(self):
-                self.mock_reporter.report = MagicMock(return_value=True)
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
 
-                self.subject.flush(force=True)
+    def test_timer_gets_reset(self):
+        self.subject.flush(force=True)
 
-                assert_profile_is_reset(self.mock_profile_factory, self.clock)
+        self.timer.reset.assert_called_once()
 
-            def test_timer_gets_reset(self):
-                self.subject.flush(force=True)
 
-                self.timer.reset.assert_called_once()
+class TestWhenMinReportingTimeReached(TestForceFlush):
+    @before
+    def before(self):
+        super().before()
+        self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL + ONE_SECOND)
 
-            def test_it_adds_the_run_profiler_overhead_metric_to_the_profile(
-                    self):
-                run_profiler_metric = Metric()
-                run_profiler_metric.add(0.1)
-                self.timer.get_metric.side_effect = \
-                    lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
+    def test_it_reports(self):
+        self.mock_reporter.report = MagicMock(return_value=True)
 
-                self.subject.flush(force=True)
+        self.subject.flush(force=True)
 
-                self.mock_profile.set_overhead_ms.assert_called_once_with(duration_timedelta=timedelta(seconds=0.1))
+        self.mock_reporter.report.assert_called_once()
 
-            def test_when_report_failed_profile_gets_reset(self):
-                self.mock_reporter.report = MagicMock(return_value=False)
+    def test_profile_gets_reset(self):
+        self.mock_reporter.report = MagicMock(return_value=True)
 
-                self.subject.flush(force=True)
+        self.subject.flush(force=True)
 
-                assert_profile_is_reset(self.mock_profile_factory, self.clock)
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
 
-    class TestMemoryUsageLimitExceeded:
-        @before
-        def before(self):
-            self.mock_profile.get_memory_usage_bytes = MagicMock(
-                return_value=DEFAULT_MEMORY_LIMIT_BYTES + 1)
-            self.sample = Sample([["method1", "method2"]])
+    def test_timer_gets_reset(self):
+        self.subject.flush(force=True)
 
-        class TestLastFlushWasLongerThanMinTimeForReporting:
-            @before
-            def before(self):
-                self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL + ONE_SECOND)
-                self.mock_profile.is_empty = MagicMock(return_value=False)
+        self.timer.reset.assert_called_once()
 
-            def test_it_reports_without_exception(self):
-                self.mock_reporter.report.return_value = True
-                self.subject.add(self.sample)
-                self.mock_reporter.report.assert_called_once_with(self.subject.profile)
+    def test_it_adds_the_run_profiler_overhead_metric_to_the_profile(
+            self):
+        run_profiler_metric = Metric()
+        run_profiler_metric.add(0.1)
+        self.timer.get_metric.side_effect = \
+            lambda metric_name: metric_name == "runProfiler" and run_profiler_metric
 
-            def test_it_updates_last_report_attempted(self):
-                self.mock_reporter.report.return_value = True
-                assert (self.subject.last_report_attempted == CURRENT_TIME_FOR_TESTING_MILLI)
-                self.subject.add(self.sample)
-                assert (self.subject.last_report_attempted == self.time_now * 1000)
+        self.subject.flush(force=True)
 
-        class TestLastFlushWasWithinMinTimeForReporting:
-            @before
-            def before(self):
-                self.sample = Sample([["method1", "method2"]])
-                self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL - ONE_SECOND)
+        self.mock_profile.set_overhead_ms.assert_called_once_with(duration_timedelta=timedelta(seconds=0.1))
 
-            def test_exception_raised_when_memory_usage_exceeded(self):
-                with pytest.raises(OverMemoryLimitException):
-                    self.subject.add(self.sample)
+    def test_when_report_failed_profile_gets_reset(self):
+        self.mock_reporter.report = MagicMock(return_value=False)
+
+        self.subject.flush(force=True)
+
+        assert_profile_is_reset(self.mock_profile_factory, self.clock)
+
+
+class TestMemoryUsageLimitExceeded(TestLocalAggregator):
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES + 1)
+        self.sample = Sample([["method1", "method2"]])
+
+
+class TestLastFlushWasLongerThanMinTimeForReporting(TestMemoryUsageLimitExceeded):
+    @before
+    def before(self):
+        super().before()
+        self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL + ONE_SECOND)
+        self.mock_profile.is_empty = MagicMock(return_value=False)
+
+    def test_it_reports_without_exception(self):
+        self.mock_reporter.report.return_value = True
+        self.subject.add(self.sample)
+        self.mock_reporter.report.assert_called_once_with(self.subject.profile)
+
+    def test_it_updates_last_report_attempted(self):
+        self.mock_reporter.report.return_value = True
+        assert (self.subject.last_report_attempted == CURRENT_TIME_FOR_TESTING_MILLI)
+        self.subject.add(self.sample)
+        assert (self.subject.last_report_attempted == self.time_now * 1000)
+
+
+class TestLastFlushWasWithinMinTimeForReporting(TestLocalAggregator):
+    @before
+    def before(self):
+        super().before()
+        self.mock_profile.get_memory_usage_bytes = MagicMock(
+            return_value=DEFAULT_MEMORY_LIMIT_BYTES + 1)
+        self.sample = Sample([["method1", "method2"]])
+        self.move_clock_to(INITIAL_MINIMUM_REPORTING_INTERVAL - ONE_SECOND)
+
+    def test_exception_raised_when_memory_usage_exceeded(self):
+        with pytest.raises(OverMemoryLimitException):
+            self.subject.add(self.sample)

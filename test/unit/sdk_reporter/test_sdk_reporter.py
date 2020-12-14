@@ -20,7 +20,6 @@ profile = Profile(profiling_group_name, 1.0, 0.5, current_milli_time())
 
 
 class TestSdkReporter:
-    @before
     def before(self):
         codeguru_client_builder = CodeGuruClientBuilder(environment={
             "aws_session": boto3.session.Session()
@@ -50,63 +49,71 @@ class TestSdkReporter:
         self.subject = SdkReporter(environment=self.environment)
         self.subject.setup()
 
-    class TestReport:
-        def test_report_calls_the_client(self):
-            expected_params = {
-                'agentProfile': ANY,
-                'contentType': 'application/json',
-                'profilingGroupName': profiling_group_name
+
+class TestReport(TestSdkReporter):
+    @before
+    def before(self):
+        super().before()
+
+    def test_report_calls_the_client(self):
+        expected_params = {
+            'agentProfile': ANY,
+            'contentType': 'application/json',
+            'profilingGroupName': profiling_group_name
+        }
+        self.client_stubber.add_response('post_agent_profile', {}, expected_params)
+
+        with self.client_stubber:
+            assert self.subject.report(profile) is True
+
+    def test_return_false_when_report_throws_error(self):
+        self.client_stubber.add_client_error('post_agent_profile', http_status_code=500,
+                                             service_message='Simulated error in post_agent_profile call')
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+
+
+class TestConfigureAgent(TestSdkReporter):
+    @before
+    def before(self):
+        super().before()
+
+    def test_configure_agent_calls_the_client(self):
+        response = {
+            'configuration': {
+                'agentParameters': {
+                    'SamplingIntervalInMilliseconds': '91000',
+                    'MinimumTimeForReportingInMilliseconds': '60000',
+                    'MaxStackDepth': '1001'
+                },
+                'periodInSeconds': 123,
+                'shouldProfile': False
             }
-            self.client_stubber.add_response('post_agent_profile', {}, expected_params)
+        }
+        self.client_stubber.add_response('configure_agent', response)
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert AgentConfiguration.get().should_profile is False
+            assert AgentConfiguration.get().sampling_interval.total_seconds() == 91
 
-            with self.client_stubber:
-                assert self.subject.report(profile) is True
+    def test_agent_configuration_when_configure_agent_throws_error(self):
+        self.client_stubber.add_client_error('configure_agent', http_status_code=500,
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert AgentConfiguration.get().should_profile is True
+            assert AgentConfiguration.get().sampling_interval == timedelta(seconds=13)
 
-        def test_return_false_when_report_throws_error(self):
-            self.client_stubber.add_client_error('post_agent_profile', http_status_code=500,
-                                                 service_message='Simulated error in post_agent_profile call')
-            with self.client_stubber:
-                assert self.subject.report(profile) is False
+    def test_when_backends_sends_resource_not_found_it_stops_the_profiling(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code='ResourceNotFoundException',
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert AgentConfiguration.get().should_profile is False
 
-    class TestConfigureAgent:
-        def test_configure_agent_calls_the_client(self):
-            response = {
-                'configuration': {
-                    'agentParameters': {
-                        'SamplingIntervalInMilliseconds': '91000',
-                        'MinimumTimeForReportingInMilliseconds': '60000',
-                        'MaxStackDepth': '1001'
-                    },
-                    'periodInSeconds': 123,
-                    'shouldProfile': False
-                }
-            }
-            self.client_stubber.add_response('configure_agent', response)
-            with self.client_stubber:
-                self.subject.refresh_configuration()
-                assert AgentConfiguration.get().should_profile is False
-                assert AgentConfiguration.get().sampling_interval.total_seconds() == 91
-
-        def test_agent_configuration_when_configure_agent_throws_error(self):
-            self.client_stubber.add_client_error('configure_agent', http_status_code=500,
-                                                 service_message='Simulated error in configure_agent call')
-            with self.client_stubber:
-                self.subject.refresh_configuration()
-                assert AgentConfiguration.get().should_profile is True
-                assert AgentConfiguration.get().sampling_interval == timedelta(seconds=13)
-
-        class TestWhenBackendsSendsResourceNotFound:
-            def test_it_stops_the_profiling(self):
-                self.client_stubber.add_client_error('configure_agent', service_error_code='ResourceNotFoundException',
-                                                     service_message='Simulated error in configure_agent call')
-                with self.client_stubber:
-                    self.subject.refresh_configuration()
-                    assert AgentConfiguration.get().should_profile is False
-
-        class TestWhenBackendsSendsValidationException:
-            def test_it_stops_the_profiling(self):
-                self.client_stubber.add_client_error('configure_agent', service_error_code='ValidationException',
-                                                     service_message='Simulated error in configure_agent call')
-                with self.client_stubber:
-                    self.subject.refresh_configuration()
-                    assert AgentConfiguration.get().should_profile is False
+    def test_when_backend_sends_validation_exception_it_stops_the_profiling(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code='ValidationException',
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert AgentConfiguration.get().should_profile is False
