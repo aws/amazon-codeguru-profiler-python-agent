@@ -148,8 +148,8 @@ class TestUpdateCurrentNodeAndGetChild(TestCallGraphNode):
             node = self.subject.update_current_node_and_get_child(
                 Frame("new_child_frame", file_path="file_path/file.py", line_no=None))
 
-            assert (node.start_line is 100)
-            assert (node.end_line is 100)
+            assert (node.start_line == 100)
+            assert (node.end_line == 100)
 
 
 class TestInteractionWithMemoryCounter:
