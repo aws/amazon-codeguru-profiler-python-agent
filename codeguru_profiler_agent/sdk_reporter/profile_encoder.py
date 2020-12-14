@@ -46,7 +46,10 @@ class ProfileEncoder:
         if self._gzip:
             output_stream = self._gzip_stream_from(output_stream)
 
-        self.InnerProfileEncoder(profile, self._agent_metadata, output_stream, self._module_path_extractor).encode()
+        output_stream.write(
+            self.InnerProfileEncoder(profile, self._agent_metadata, self._module_path_extractor)
+                .encode_content().encode("utf-8")
+        )
 
         if self._gzip:
             output_stream.close()
@@ -69,98 +72,97 @@ class ProfileEncoder:
             return self._extractor_fun(file_path, self._sys_path)
 
     class InnerProfileEncoder:
-        def __init__(self, profile, agent_metadata, output_stream, module_path_extractor):
+        def __init__(self, profile, agent_metadata, module_path_extractor):
             self._profile = profile
-            self._output_stream = output_stream
             self._agent_metadata = agent_metadata
             self._module_path_extractor = module_path_extractor
 
-        def encode(self):
-            profile = self._profile
-            self._stream_append('{\n  ')
-            self._stream_append('"start": {start},\n  '.format(start=int(profile.start)))
-            self._stream_append('"end": {end},\n  '.format(end=int(profile.end)))
-            self._encode_agent_metadata()
-            self._stream_append(',\n  ')
-            self._encode_call_graph(profile.callgraph)
-            self._stream_append("\n}")
+        def encode_content(self):
+            profile_in_map = {
+                "start": int(self._profile.start),
+                "end": int(self._profile.end),
+                "agentMetadata": self._encode_agent_metadata(),
+                "callgraph": self._encode_call_graph(self._profile.callgraph)
+            }
+
+            return json.dumps(profile_in_map)
 
         def _encode_agent_metadata(self):
             profile_duration_seconds = self._profile.get_active_millis_since_start() / 1000.0
             sample_weight = 1.0 if (profile_duration_seconds == 0) else self._profile.total_sample_count / profile_duration_seconds
             average_num_threads = 0.0 if (self._profile.total_sample_count == 0) else (self._profile.total_seen_threads_count / self._profile.total_sample_count)
-            self._stream_append(
-                '"agentMetadata": {agent_metadata}'.format(
-                    agent_metadata=self._agent_metadata.serialize_to_json_string(
+
+            return self._agent_metadata.serialize_to_json(
                         sample_weight=sample_weight,
                         duration_ms=self._profile.get_active_millis_since_start(),
                         cpu_time_seconds=self._profile.cpu_time_seconds,
                         average_num_threads=average_num_threads,
                         memory_usage_mb=self._convert_to_mb(self._profile.get_memory_usage_bytes()),
                         overhead_ms=self._profile.overhead_ms
-                    )
-                )
             )
 
         def _convert_to_mb(self, bytes_to_convert):
             return bytes_to_convert / (1024 * 1024)
 
         def _encode_call_graph(self, call_graph):
-            self._stream_append('"callgraph": ')
-            self._encode_node_recursive(call_graph)
+            return self._encode_node_recursive(call_graph)
 
         def _convert_line_range(self, node):
             if node.start_line is None:
                 return None
 
             if node.start_line == node.end_line:
-                return '"line": [{line_no}]'.format(line_no=node.start_line)
+                return {
+                    "line": [node.start_line]
+                }
             else:
-                return '"line": [{start_line}, {end_line}]'.format(start_line=node.start_line, end_line=node.end_line)
+                return {
+                    "line": [node.start_line, node.end_line]
+                }
 
         def _convert_file_path(self, node):
             if node.file_path is None:
                 return None
-            return '"file": "{file_path}"'.format(file_path=node.file_path)
+            return {
+                "file": node.file_path
+            }
 
         def _convert_runnable_count(self, node):
             if node.runnable_count > 0:
-                return '"counts": {{"WALL_TIME": {runnable_count}}}'.format(runnable_count=node.runnable_count)
+                return {
+                    "counts": {
+                        "WALL_TIME": node.runnable_count
+                    }
+                }
             return None
 
         def _encode_node_recursive(self, node):
-            self._stream_append('{')
+            node_map = {}
+            runnable_count_map = self._convert_runnable_count(node)
+            if runnable_count_map:
+                node_map.update(runnable_count_map)
+            file_path_map = self._convert_file_path(node)
+            if file_path_map:
+                node_map.update(file_path_map)
+            line_range_map = self._convert_line_range(node)
+            if line_range_map:
+                node_map.update(line_range_map)
 
-            frame_metadata = list(filter(None, [self._convert_runnable_count(node), self._convert_file_path(node),
-                                                self._convert_line_range(node)]))
-            self._stream_append(','.join(frame_metadata))
+            if node.children:
+                node_map["children"] = self._encode_children_nodes_recursive(node.children)
 
-            if not node.children:
-                self._stream_append('}')
-                return node.runnable_count
-            else:
-                if frame_metadata:
-                    self._stream_append(',')
-                self._stream_append('"children": {')
-                self._encode_children_nodes_recursive(node.children)
-                self._stream_append('}}')
+            return node_map
 
         def _encode_children_nodes_recursive(self, children_nodes):
-            first_element = True
+            node_map = {}
             for child_node in children_nodes:
-                if not first_element:
-                    self._stream_append(", ")
-                else:
-                    first_element = False
-
                 frame = DEFAULT_FRAME_COMPONENT_DELIMITER.join(
                     list(filter(None, [self._module_path_extractor.get_module_path(child_node.file_path),
                                        child_node.class_name, child_node.frame_name])))
-                self._stream_append(u'"{node_frame}": '.format(node_frame=frame))
-                self._encode_node_recursive(child_node)
+                child_node_map = self._encode_node_recursive(child_node)
+                node_map[frame] = child_node_map
 
-        def _stream_append(self, string):
-            self._output_stream.write(string.encode("utf-8"))
+            return node_map
 
     # Useful for debugging, converts a profile into a prettified JSON output
     @staticmethod

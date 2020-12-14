@@ -58,7 +58,7 @@ class AgentMetadata:
         self._fleet_info = fleet_info
         self.agent_info = agent_info
         self.runtime_version = runtime_version
-        self.json_string_rep = None
+        self.json_rep = None
 
     @property
     def fleet_info(self):
@@ -66,13 +66,13 @@ class AgentMetadata:
             self._fleet_info = look_up_fleet_info()
         return self._fleet_info
 
-    def serialize_to_json_string(self, sample_weight, duration_ms, cpu_time_seconds,
-                                 average_num_threads, overhead_ms, memory_usage_mb):
+    def serialize_to_json(self, sample_weight, duration_ms, cpu_time_seconds,
+                          average_num_threads, overhead_ms, memory_usage_mb):
         """
         This needs to be compliant with agent profile schema.
         """
-        if self.json_string_rep is None:
-            metadata_in_map = {
+        if self.json_rep is None:
+            self.json_rep = {
                 "sampleWeights": {
                     "WALL_TIME": sample_weight
                 },
@@ -92,6 +92,5 @@ class AgentMetadata:
                 }
             }
             if overhead_ms != 0:
-                metadata_in_map["agentOverhead"]["timeInMs"] = overhead_ms
-            self.json_string_rep = json.dumps(metadata_in_map)
-        return self.json_string_rep
+                self.json_rep["agentOverhead"]["timeInMs"] = overhead_ms
+        return self.json_rep
