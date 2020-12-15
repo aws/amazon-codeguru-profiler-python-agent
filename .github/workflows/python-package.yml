@@ -31,7 +31,7 @@ jobs:
         python -m pip install --upgrade pip
     - name: Install dependencies for running tests
       run: |
-        python -m pip install flake8 pytest
+        python -m pip install flake8 pytest pytest-print
         python -m pip install mock httpretty six pympler
     - name: Install dependencies for additional checks
       run: |
@@ -51,11 +51,10 @@ jobs:
         bandit -r codeguru_profiler_agent
     - name: Run a specific test
       run: |
-        python -m pip install pytest-html
-        pytest --html=pytest-report.html --self-contained-html test/unit/sdk_reporter/test_sdk_profile_encoder.py
+        pytest -v test/unit/sdk_reporter/test_sdk_profile_encoder.py
     - name: Run tests with pytest
       run: |
-        pytest
+        pytest -v
         # For local testing, you can use pytest-html if you want a generated html report.
         # python -m pip install pytest-html
         # pytest --html=pytest-report.html --self-contained-html
