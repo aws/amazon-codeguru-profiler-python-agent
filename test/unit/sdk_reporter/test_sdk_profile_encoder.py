@@ -45,6 +45,9 @@ environment = {
 
 class TestSdkProfileEncoder:
     def before(self):
+        import socket
+        print(socket.gethostname())
+        print(socket)
         self.profile = example_profile()
         self.output_stream = io.BytesIO()
         self.subject = \
