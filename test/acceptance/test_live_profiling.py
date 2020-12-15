@@ -1,5 +1,3 @@
-import pytest
-import socket
 import time
 
 from datetime import timedelta
@@ -8,13 +6,9 @@ from mock import patch
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
+from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
 
-TEST_PROFILING_GROUP_NAME = "integrationTest"
 
-
-@pytest.mark.skipif(
-    socket.gethostname().startswith("pb-worker-prod") or socket.gethostname().startswith("coverlay-"),
-    reason="Cannot give PackageBuilder permission to report on our Profiling Group")
 class TestLiveProfiling:
 
     def test_live_profiling(self):
@@ -27,7 +21,7 @@ class TestLiveProfiling:
                     return_value=False):
 
             profiler = Profiler(
-                profiling_group_name=TEST_PROFILING_GROUP_NAME,
+                profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 region_name='eu-west-2',
                 environment_override={"initial_sampling_interval": timedelta(),
                                       "sampling_interval": timedelta(seconds=1),

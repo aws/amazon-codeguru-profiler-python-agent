@@ -5,14 +5,14 @@ from test.pytestutils import before
 
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
-from test.help_utils import TEST_PROFILING_GROUP_NAME
+from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
 
 
 class TestEndToEndProfiling:
     @before
-    def around(self):
+    def before(self):
         self.profiler = Profiler(
-            profiling_group_name=TEST_PROFILING_GROUP_NAME,
+            profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
             environment_override={'initial_sampling_interval': timedelta(),
                                   'agent_metadata': AgentMetadata(fleet_info=DefaultFleetInfo())}
         )
@@ -21,7 +21,7 @@ class TestEndToEndProfiling:
         report_expected_params = {
             'agentProfile': ANY,
             'contentType': 'application/json',
-            'profilingGroupName': TEST_PROFILING_GROUP_NAME
+            'profilingGroupName': DUMMY_TEST_PROFILING_GROUP_NAME
         }
         self.client_stubber.add_response('configure_agent',
                                          {'configuration': {'shouldProfile': True, 'periodInSeconds': 100}})
@@ -44,7 +44,7 @@ class TestEndToEndProfiling:
 
     def test_report_via_invalid_reporting_mode(self):
         self.profiler = Profiler(
-            profiling_group_name="test-application",
+            profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
             environment_override={
                 "reporting_mode": "invalid_reporting_mode",
             })

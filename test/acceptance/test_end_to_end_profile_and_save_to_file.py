@@ -1,5 +1,4 @@
 import json
-import pytest
 import shutil
 import tempfile
 import os
@@ -12,6 +11,8 @@ from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.utils import time as time_utils
 from test.help_utils import HelperThreadRunner, TEST_PROFILING_GROUP_NAME
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
+from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
+from test.pytestutils import before
 
 
 def frames_in_callgraph_are_in_expected_order(node, parent_frame, child_frame):
@@ -29,8 +30,8 @@ def frames_in_callgraph_are_in_expected_order(node, parent_frame, child_frame):
 
 
 class TestEndToEndProfileAndSaveToFile:
-    @pytest.fixture(autouse=True)
-    def around(self):
+    @before
+    def before(self):
         self.temporary_directory = tempfile.mkdtemp()
 
         helper = HelperThreadRunner()
@@ -55,7 +56,7 @@ class TestEndToEndProfileAndSaveToFile:
             test_start_time = time_utils.current_milli_time()
 
             profiler = Profiler(
-                profiling_group_name=TEST_PROFILING_GROUP_NAME,
+                profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
                     "initial_sampling_interval": timedelta(),
                     "reporting_mode": "file",

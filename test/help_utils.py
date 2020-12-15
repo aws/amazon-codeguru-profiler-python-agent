@@ -3,8 +3,9 @@ import threading
 import time
 from queue import Queue
 
-INTEGRATION_TEST_ACCOUNT_ID = '519630429520'
+INTEGRATION_TEST_ACCOUNT_ID = "519630429520"
 TEST_PROFILING_GROUP_NAME = "integrationTest"
+DUMMY_TEST_PROFILING_GROUP_NAME = "DummyNameThatWillNotBeUsed"
 
 
 class HelperThreadRunner:

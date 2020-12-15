@@ -1,5 +1,3 @@
-import socket
-
 import pytest
 
 from datetime import timedelta
@@ -7,22 +5,17 @@ from datetime import timedelta
 from codeguru_profiler_agent.metrics.timer import Timer
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
-from test.help_utils import wait_for, TEST_PROFILING_GROUP_NAME, _get_credentials
+from test.help_utils import wait_for, DUMMY_TEST_PROFILING_GROUP_NAME
+from test.pytestutils import before
 
 
-# TODO FIXME Consider moving the integration tests and run them in pipeline as an approval step.
-@pytest.mark.skipif(
-    not (socket.gethostname().endswith("ant.amazon.com") or socket.gethostname().startswith("dev-dsk")),
-    reason="This integration test runs only on local development machines, with access to the backend service.")
 class TestCPULimit:
     class TestCPULimitReachedDuringProfiling:
-        @pytest.fixture(autouse=True)
-        def around(self):
-            _get_credentials()
-
+        @before
+        def before(self):
             self.timer = Timer()
             self.profiler = Profiler(
-                profiling_group_name=TEST_PROFILING_GROUP_NAME,
+                profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
                     "timer": self.timer,
                     "cpu_limit_percentage": 40,
