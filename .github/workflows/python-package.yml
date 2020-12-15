@@ -15,8 +15,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        # TODO FIXME include  macos-latest
+        # TODO include multiple python versions '3.6', '3.7', '3.8', '3.9'
+        os: [ubuntu-latest,windows-latest]
+        python-version: ['3.8']
 
     steps:
     - uses: actions/checkout@v2
@@ -49,7 +51,8 @@ jobs:
         bandit -r codeguru_profiler_agent
     - name: Run a specific test
       run: |
-        python -m pytest test/unit/sdk_reporter/test_sdk_profile_encoder.py
+        python -m pip install pytest-html
+        pytest --html=pytest-report.html --self-contained-html test/unit/sdk_reporter/test_sdk_profile_encoder.py
     - name: Run tests with pytest
       run: |
         pytest
