@@ -86,7 +86,6 @@ class TestEndToEndProfileAndSaveToFile:
 
     @staticmethod
     def assert_valid_agent_metadata(agent_metadata):
-        print(agent_metadata)
         assert agent_metadata["agentInfo"]
         assert agent_metadata["fleetInfo"]
         assert agent_metadata["runtimeVersion"]
