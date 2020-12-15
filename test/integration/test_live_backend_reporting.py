@@ -17,10 +17,12 @@ from codeguru_profiler_agent.model.profile import Profile
 from codeguru_profiler_agent.model.sample import Sample
 
 
-# TODO FIXME Consider moving the integration tests and run them in pipeline as an approval step.
 @pytest.mark.skipif(
-    not (socket.gethostname().endswith("ant.amazon.com") or socket.gethostname().startswith("dev-dsk")),
-    reason="This integration test runs only on local development machines, with access to the backend service.")
+    socket.gethostname().startswith("pb-worker-prod") or
+    socket.gethostname().startswith("coverlay-") or
+    socket.gethostname().endswith("internal.cloudapp.net"),
+    reason="This integration test is skipped on any shared fleet from Amazon or GitHub "
+           "because it needs credentials to access the backend service.")
 class TestLiveBackendReporting:
     @before
     def before(self):
