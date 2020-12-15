@@ -9,10 +9,7 @@ from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
 from test.help_utils import wait_for, TEST_PROFILING_GROUP_NAME, _get_credentials
 
-# TODO FIXME Consider moving the integration tests and run them in pipeline as an approval step.
-@pytest.mark.skipif(
-    not (socket.gethostname().endswith("ant.amazon.com") or socket.gethostname().startswith("dev-dsk")),
-    reason="This integration test runs only on local development machines, with access to the backend service.")
+@pytest.mark.testinfra_hosts
 class TestCPULimit:
     class TestCPULimitReachedDuringProfiling:
         @pytest.fixture(autouse=True)
