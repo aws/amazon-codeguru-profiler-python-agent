@@ -32,7 +32,7 @@ class TestAWSLambda:
                     subject = AWSLambda.look_up_metadata(self.context, {})
                     assert subject.function_arn == "the_lambda_function_arn"
 
-                def test_other_values_are_set_to_none(self):
+                def test_when_env_is_not_available_other_values_are_set_to_none(self):
                     subject = AWSLambda.look_up_metadata(self.context, {})
                     assert subject.execution_env is None
                     assert subject.memory_limit_mb is None

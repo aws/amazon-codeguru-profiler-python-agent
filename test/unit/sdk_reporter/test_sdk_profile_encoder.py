@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import platform
 
 import pytest
 from mock import MagicMock
@@ -49,8 +48,7 @@ class TestSdkProfileEncoder:
         self.output_stream = io.BytesIO()
         self.subject = \
             ProfileEncoder(gzip=False, environment=environment)
-        self.decoded_json_result = \
-            TestSdkProfileEncoder.decoded_json_result.__get__(self)
+        self.decoded_json_result = self.decoded_json_result.__get__(self)
         self._decoded_json_result = None
 
     def decoded_json_result(self):
@@ -76,12 +74,8 @@ class TestInsideTheResult(TestSdkProfileEncoder):
     def before(self):
         super().before()
 
-    def test_it_includes_the_start_time_from_the_profile_in_epoch_millis(self, printer):
-        import socket
-        printer(socket.gethostname())
-        printer(socket.getfqdn())
-        printer(socket)
-
+    def test_it_includes_the_start_time_from_the_profile_in_epoch_millis(
+            self):
         assert (self.decoded_json_result()["start"] == 1514764800000)
 
     def test_it_includes_the_end_time_from_the_profile_in_epoch_millis(
@@ -140,45 +134,23 @@ class TestInsideTheResult(TestSdkProfileEncoder):
                     }
                 })
 
-    @pytest.mark.skipif(platform.system() != "Windows",
-                        reason="This test should only be run on Windows")
-    def test_it_handles_unicode_escape_correctly_in_Windows(self):
+    def test_it_handles_unicode_escape_correctly(self):
         self.profile.add(
             Sample(stacks=[[Frame("bottom_with_path"),
-                           Frame("top", file_path="C:\\User\\ironman\\path\\xs.py", class_name="ClassA")]])
+                            Frame("C:\\User\\ironman\\top", file_path="path\\xs.py", class_name="ClassA")]])
         )
 
         assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_path"] ==
                 {
                     "children": {
-                        "User.ironman.path.xs:ClassA:top": {
-                            'file': 'C:\\User\\ironman\\path\\xs.py',
+                        "path\\xs:ClassA:C:\\User\\ironman\\top": {
+                            'file': 'path\\xs.py',
                             "counts": {
                                 "WALL_TIME": 1
                             }
                         }
                     }
                 })
-
-    @pytest.mark.skipif(platform.system() == "Windows",
-                        reason="This test should not be run on Windows")
-    def test_it_handles_unicode_escape_correctly_in_non_Windows_system(self):
-        self.profile.add(
-            Sample(stacks=[[Frame("bottom_with_path"),
-                           Frame("top", file_path="C:\\User\\ironman\\path\\xs.py", class_name="ClassA")]])
-        )
-
-        assert (self.decoded_json_result()["callgraph"]["children"]["bottom_with_path"] ==
-                {
-                    "children": {
-                        "C:\\User\\ironman\\path\\xs:ClassA:top": {
-                            'file': 'C:\\User\\ironman\\path\\xs.py',
-                            "counts": {
-                                "WALL_TIME": 1
-                            }
-                        }
-                    }
-        })
 
     def test_it_includes_file_path_when_available(self):
         self.profile.add(

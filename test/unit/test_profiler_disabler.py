@@ -105,8 +105,8 @@ class TestKillSwitch:
 
 
 class TestWhenKillSwitchFileIsAdded:
-    @pytest.fixture(autouse=True)
-    def around(self):
+    @before
+    def before(self):
         self.temporary_directory = tempfile.mkdtemp()
         self.temp_filepath = str(
             Path(self.temporary_directory,
@@ -128,8 +128,8 @@ class TestWhenKillSwitchFileIsAdded:
 
 
 class TestWhenKillSwitchFileIsRemoved:
-    @pytest.fixture(autouse=True)
-    def around(self):
+    @before
+    def before(self):
         self.temporary_directory = tempfile.mkdtemp()
         self.temp_filepath = str(
             Path(self.temporary_directory,
@@ -155,6 +155,7 @@ class TestCpuUsageCheck:
         set_agent_config(sampling_interval_seconds=1, cpu_limit_percentage=10)
         self.process_duration_check = CpuUsageCheck(self.timer)
 
+
 class TestGetAverageSamplingIntervalSeconds(TestCpuUsageCheck):
     @before
     def before(self):
@@ -174,6 +175,7 @@ class TestGetAverageSamplingIntervalSeconds(TestCpuUsageCheck):
             self):
         self.profile.total_sample_count = MINIMUM_SAMPLES_IN_PROFILE - 1
         assert CpuUsageCheck._get_average_sampling_interval_seconds(self.profile) == 23
+
 
 class TestIsCpuUsageLimitReached(TestCpuUsageCheck):
     @before

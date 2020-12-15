@@ -77,12 +77,11 @@ class TestProfilerBuilder:
             assert profiler._profiler_runner.collector.reporter.profiling_group_name == 'name_from_arn'
             assert 'us-west-2' in profiler._profiler_runner.collector.reporter.codeguru_client_builder.codeguru_client._endpoint.host
 
-        def test_it_creates_a_profiler_and_uses_correct_name_and_region(self):
+        def test_it_creates_a_profiler_and_uses_correct_region_from_arn(self):
             env = {PG_ARN_ENV: 'arn:aws:codeguru-profiler:us-west-2:003713371902:profilingGroup/name_from_arn',
                    REGION_ENV: 'eu-north-1'}
             profiler = build_profiler(env=env)
             assert profiler is not None
-            assert profiler._profiler_runner.collector.reporter.profiling_group_name == 'name_from_arn'
             assert 'us-west-2' in profiler._profiler_runner.collector.reporter.codeguru_client_builder.codeguru_client._endpoint.host
 
         class TestWhenProfilingGroupNameIsAlsoProvided:
@@ -97,10 +96,9 @@ class TestProfilerBuilder:
             env = {PG_ARN_ENV: 'this_arn_is_definitely_not_correct',
                    PG_NAME_ENV: 'but_this_name_should_do',
                    REGION_ENV: 'eu-north-1'}
-            assert build_profiler(env=env) \
-                       ._profiler_runner.collector.reporter.profiling_group_name == 'but_this_name_should_do'
-            assert 'eu-north-1' in build_profiler(env=env) \
-                ._profiler_runner.collector.reporter.codeguru_client_builder.codeguru_client._endpoint.host
+            profiler = build_profiler(env=env)
+            assert profiler._profiler_runner.collector.reporter.profiling_group_name == 'but_this_name_should_do'
+            assert 'eu-north-1' in profiler._profiler_runner.collector.reporter.codeguru_client_builder.codeguru_client._endpoint.host
 
     class TestWhenRegionNameIsInEnvironment:
         def test_it_creates_a_profiler_and_uses_correct_region(self):

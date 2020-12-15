@@ -95,7 +95,7 @@ class TestUpdateCurrentNodeAndGetChild(TestCallGraphNode):
 
         assert (len(self.subject.children) == 1)
 
-    def test_when_child_node_with_frame_already_existed__it_returns_the_existing_child_node(
+    def test_when_child_node_with_frame_already_existed_it_returns_the_existing_child_node(
             self):
         new_child_node = self.subject.update_current_node_and_get_child(Frame("new_child_frame"))
 
@@ -111,7 +111,7 @@ class TestUpdateCurrentNodeAndGetChild(TestCallGraphNode):
         assert (node.start_line == 100)
         assert (node.end_line == 123)
 
-    def test_when_line_no_needs_to_be_updated__it_takes_the_largest_end_line_no(self):
+    def test_when_line_no_needs_to_be_updated_it_takes_the_largest_end_line_no(self):
         self.subject.update_current_node_and_get_child(
             Frame("new_child_frame", file_path="file_path/file.py", line_no=200))
 
@@ -150,7 +150,6 @@ class TestUpdateCurrentNodeAndGetChild(TestCallGraphNode):
 
             assert (node.start_line == 100)
             assert (node.end_line == 100)
-
 
 class TestInteractionWithMemoryCounter:
     def test_insert_first_child_calls_memory_counter(self):
@@ -200,7 +199,7 @@ class TestIncreaseRunnableCount:
 
         assert (subject.runnable_count == 2)
 
-    def test_when_a_custom_value_to_add_is_used__it_raises_a_value_error(self):
+    def test_when_a_custom_value_to_add_is_used_it_raises_a_value_error(self):
         subject = CallGraphNode("dummy_frame", class_name=None, file_path=None, line_no=None)
         with pytest.raises(ValueError):
             subject.increase_runnable_count(value_to_add=-1)
