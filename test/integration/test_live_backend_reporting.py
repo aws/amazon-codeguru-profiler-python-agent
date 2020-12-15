@@ -20,7 +20,7 @@ from codeguru_profiler_agent.model.sample import Sample
 @pytest.mark.skipif(
     socket.gethostname().startswith("pb-worker-prod") or
     socket.gethostname().startswith("coverlay-") or
-    socket.gethostname().endswith("internal.cloudapp.net"),
+    socket.getfqdn().endswith("internal.cloudapp.net"),
     reason="This integration test is skipped on any shared fleet from Amazon or GitHub "
            "because it needs credentials to access the backend service.")
 class TestLiveBackendReporting:
