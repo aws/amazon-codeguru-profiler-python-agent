@@ -49,9 +49,9 @@ jobs:
       run: |
         # run bandit to find common security issues
         bandit -r codeguru_profiler_agent
-    - name: Run a specific test
+    - name: Run a specific test with logs
       run: |
-        pytest -v test/unit/sdk_reporter/test_sdk_profile_encoder.py
+        pytest -v -o log_cli=true test/acceptance/test_live_profiling.py
     - name: Run tests with pytest
       run: |
         pytest -v
