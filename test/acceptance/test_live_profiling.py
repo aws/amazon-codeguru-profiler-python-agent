@@ -11,7 +11,9 @@ from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
 
 class TestLiveProfiling:
 
-    def test_live_profiling(self):
+    def test_live_profiling(self, printer):
+        import socket
+        printer(socket.getfqdn())
         with \
                 patch(
                     "codeguru_profiler_agent.reporter.agent_configuration.AgentConfiguration.is_under_min_reporting_time",

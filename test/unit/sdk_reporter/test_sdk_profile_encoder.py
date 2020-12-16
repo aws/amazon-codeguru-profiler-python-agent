@@ -75,7 +75,9 @@ class TestInsideTheResult(TestSdkProfileEncoder):
         super().before()
 
     def test_it_includes_the_start_time_from_the_profile_in_epoch_millis(
-            self):
+            self, printer):
+        import socket
+        printer(socket.getfqdn())
         assert (self.decoded_json_result()["start"] == 1514764800000)
 
     def test_it_includes_the_end_time_from_the_profile_in_epoch_millis(
