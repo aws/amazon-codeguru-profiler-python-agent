@@ -1,5 +1,3 @@
-import pytest
-
 from datetime import timedelta
 
 from codeguru_profiler_agent.metrics.timer import Timer

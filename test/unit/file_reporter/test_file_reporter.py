@@ -1,4 +1,3 @@
-import datetime
 import tempfile
 import pytest
 import shutil
@@ -9,7 +8,7 @@ from pathlib import Path
 
 from codeguru_profiler_agent.file_reporter.file_reporter import FileReporter
 from codeguru_profiler_agent.sdk_reporter.profile_encoder import ProfileEncoder
-
+from test.help_utils import FILE_PREFIX
 
 class TestFileReporter:
     class TestReport:
@@ -17,7 +16,7 @@ class TestFileReporter:
         def around(self):
             temporary_directory = tempfile.mkdtemp()
             self.file_prefix = str(
-                Path(temporary_directory, "pytest-SkySailPythonAgent-"))
+                Path(temporary_directory, FILE_PREFIX))
 
             self.profile_encoder = MagicMock(
                 name="profile_encoder", spec=ProfileEncoder)

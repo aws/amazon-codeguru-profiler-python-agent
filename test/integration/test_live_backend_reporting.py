@@ -5,47 +5,45 @@ import time
 
 from datetime import timedelta
 
-from test.help_utils import _get_credentials, TEST_PROFILING_GROUP_NAME
+from test.help_utils import MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS
 from test.pytestutils import before
 
 from codeguru_profiler_agent.model.frame import Frame
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration, AgentConfigurationMerger
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
 from codeguru_profiler_agent.sdk_reporter.sdk_reporter import SdkReporter
-from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilder, BETA_ENDPOINT_URL
+from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilder
 from codeguru_profiler_agent.model.profile import Profile
 from codeguru_profiler_agent.model.sample import Sample
 
 
 @pytest.mark.skipif(
+    # TODO FIXME Remove the conditions for skipping this on Amazonian fleets when we move fully to GitHub.
     socket.gethostname().startswith("pb-worker-prod") or
     socket.gethostname().startswith("coverlay-") or
-    socket.getfqdn().endswith("internal.cloudapp.net"),
-    socket.getfqdn().endswith("ip6.arpa"),
+    socket.getfqdn().endswith("internal.cloudapp.net"),  # hosts running ubuntu and windows in GitHub
+    socket.getfqdn().endswith("ip6.arpa"),  # hosts running macs in GitHub
     reason="This integration test is skipped on any shared fleet from Amazon or GitHub "
-           "because it needs credentials to access the backend service.")
+           "because it needs credentials to access the backend service. "
+           "For information on how to run this locally, read the README.md file from the test/integration/ folder.")
 class TestLiveBackendReporting:
     @before
     def before(self):
-        _get_credentials()
-
         now_millis = int(time.time()) * 1000
         five_minutes_ago_millis = now_millis - (5 * 60 * 1000)
         sample = Sample(
-            stacks=[[Frame(TEST_PROFILING_GROUP_NAME)]],
+            stacks=[[Frame(MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS)]],
             attempted_sample_threads_count=1,
             seen_threads_count=1)
 
-        self.profile = Profile(TEST_PROFILING_GROUP_NAME, 1.0, 1.0, five_minutes_ago_millis)
+        self.profile = Profile(MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS, 1.0, 1.0, five_minutes_ago_millis)
         # FIXME: Remove adding the end time manually below after feature fully support
         self.profile.end = now_millis
         self.profile.add(sample)
 
         self.environment = {
             "should_profile": True,
-            "profiling_group_name": TEST_PROFILING_GROUP_NAME,
-            "endpoint_url": BETA_ENDPOINT_URL,
-            "region_name": "eu-west-2",
+            "profiling_group_name": MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS,
             "aws_session": boto3.session.Session(),
             "reporting_interval": timedelta(minutes=13),
             "sampling_interval": timedelta(seconds=1),

@@ -1,4 +1,3 @@
-import pytest
 from test.pytestutils import before
 
 from codeguru_profiler_agent.metrics.with_timer import with_timer

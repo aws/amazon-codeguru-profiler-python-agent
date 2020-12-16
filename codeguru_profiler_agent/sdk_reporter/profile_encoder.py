@@ -1,8 +1,11 @@
 import json
 import gzip
 import io
+import platform
 import sys
 from functools import lru_cache
+import os
+from pathlib import Path
 
 GZIP_BALANCED_COMPRESSION_LEVEL = 6
 DEFAULT_FRAME_COMPONENT_DELIMITER = ":"
@@ -16,13 +19,27 @@ def _get_module_path(file_path, sys_paths):
     /tmp/bin/python/site-packages
     """
     module_path = file_path
+
+    if platform.system() == "Windows":
+        # In Windows, separator can either be / or \ from experimental result
+        file_path = file_path.replace("/", os.sep)
+
     for root in sys_paths:
         if root in file_path:
             module_path = file_path.replace(root, "")
-            if module_path.startswith("/"):
-                module_path = module_path[1:]
             break
-    return module_path.rsplit(".", 1)[0].replace("/", ".")
+
+    # remove suffix
+    module_path = str(Path(module_path).with_suffix(""))
+    # remove drive (applicable for WINDOWS customers)
+    module_path = os.path.splitdrive(module_path)[1]
+
+    module_path = module_path.replace(os.sep, ".")
+
+    if module_path.startswith("."):
+        module_path = module_path[1:]
+
+    return module_path
 
 
 class ProfileEncoder:
@@ -123,8 +140,13 @@ class ProfileEncoder:
         def _convert_file_path(self, node):
             if node.file_path is None:
                 return None
+            if platform.system() == "Windows":
+                # In Windows, separator can either be / or \ from experimental result
+                file_path = node.file_path.replace("/", os.sep)
+            else:
+                file_path = node.file_path
             return {
-                "file": node.file_path
+                "file": file_path
             }
 
         def _convert_runnable_count(self, node):

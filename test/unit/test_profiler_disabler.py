@@ -1,7 +1,6 @@
 import tempfile
 from pathlib import Path
 import shutil
-import pytest
 from mock import Mock, patch
 import time
 

@@ -8,9 +8,6 @@ from botocore.config import Config
 
 logger = logging.getLogger(__name__)
 
-# Set this value as environment["endpoint_url"] to target our beta backend
-BETA_ENDPOINT_URL = "https://codeguru-profiler-beta.eu-west-2.amazonaws.com"
-
 
 class CodeGuruClientBuilder:
     """

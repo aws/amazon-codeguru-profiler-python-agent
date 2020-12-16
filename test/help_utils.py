@@ -1,11 +1,12 @@
-import subprocess
 import threading
 import time
 from queue import Queue
 
 INTEGRATION_TEST_ACCOUNT_ID = "519630429520"
-TEST_PROFILING_GROUP_NAME = "integrationTest"
+MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS = "MyProfilingGroupForIntegrationTests"
 DUMMY_TEST_PROFILING_GROUP_NAME = "DummyNameThatWillNotBeUsed"
+
+FILE_PREFIX = "pytest-CodeGuruPythonAgent"
 
 
 class HelperThreadRunner:
@@ -58,9 +59,3 @@ def wait_for(condition, timeout_seconds=1.0, poll_interval_seconds=0.01):
             return True
         time.sleep(poll_interval_seconds)
     raise Exception("wait_for: Timed out waiting for condition to be true")
-
-
-def _get_credentials():
-    command = ['ada', 'credentials', 'update', '--account=' + INTEGRATION_TEST_ACCOUNT_ID, '--provider=isengard',
-               '--role=SkySailFullAccessForLocalTests', '--once']
-    subprocess.check_call(command)

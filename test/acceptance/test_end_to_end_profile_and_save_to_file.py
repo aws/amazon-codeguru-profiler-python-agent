@@ -9,9 +9,8 @@ from pathlib import Path
 
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.utils import time as time_utils
-from test.help_utils import HelperThreadRunner, TEST_PROFILING_GROUP_NAME
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
-from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
+from test.help_utils import HelperThreadRunner, DUMMY_TEST_PROFILING_GROUP_NAME, FILE_PREFIX
 from test.pytestutils import before
 
 
@@ -49,9 +48,7 @@ class TestEndToEndProfileAndSaveToFile:
                     "codeguru_profiler_agent.reporter.agent_configuration.AgentConfiguration.is_under_min_reporting_time",
                     return_value=False):
 
-            file_prefix = str(
-                Path(self.temporary_directory,
-                     "pytest-SkySailPythonAgent-"))
+            file_prefix = str(Path(self.temporary_directory, FILE_PREFIX))
 
             test_start_time = time_utils.current_milli_time()
 
