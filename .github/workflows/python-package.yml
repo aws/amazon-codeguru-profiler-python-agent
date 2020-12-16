@@ -51,10 +51,10 @@ jobs:
         bandit -r codeguru_profiler_agent
     - name: Run a specific test with logs
       run: |
-        pytest -v -o log_cli=true test/acceptance/test_live_profiling.py
+        pytest -vv -o log_cli=true test/acceptance/test_live_profiling.py
     - name: Run tests with pytest
       run: |
-        pytest -v
+        pytest -vv
         # For local testing, you can use pytest-html if you want a generated html report.
         # python -m pip install pytest-html
-        # pytest -v --html=pytest-report.html --self-contained-html
+        # pytest -vv --html=pytest-report.html --self-contained-html
