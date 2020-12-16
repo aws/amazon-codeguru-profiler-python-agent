@@ -21,6 +21,7 @@ from codeguru_profiler_agent.model.sample import Sample
     socket.gethostname().startswith("pb-worker-prod") or
     socket.gethostname().startswith("coverlay-") or
     socket.getfqdn().endswith("internal.cloudapp.net"),
+    socket.getfqdn().endswith("ip6.arpa"),
     reason="This integration test is skipped on any shared fleet from Amazon or GitHub "
            "because it needs credentials to access the backend service.")
 class TestLiveBackendReporting:
