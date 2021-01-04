@@ -30,6 +30,10 @@ def example_profile():
                        [Frame("bottom"), Frame("middle")]], attempted_sample_threads_count=10, seen_threads_count=15))
     profile.end = end_time
     profile.set_overhead_ms(timedelta(milliseconds=256))
+    if platform.system() == "Windows":
+        # In Windows, as time.process stays constant if no cpu time was used (https://bugs.python.org/issue37859), we
+        # would need to manually override the cpu_time_seconds to ensure the test runs as expected
+        profile.cpu_time_seconds = 0.123
     return profile
 
 

@@ -1,4 +1,5 @@
 import json
+import platform
 import shutil
 import tempfile
 import os
@@ -92,5 +93,10 @@ class TestEndToEndProfileAndSaveToFile:
         assert agent_metadata["durationInMs"]
         assert agent_metadata["sampleWeights"]["WALL_TIME"]
         assert agent_metadata["agentOverhead"]["memory_usage_mb"]
-        assert agent_metadata["agentOverhead"]["timeInMs"]
-        assert agent_metadata["cpuTimeInSeconds"] > 0
+
+        if platform.system() != "Windows":
+            # Due to the issue mentioned on https://bugs.python.org/issue37859, we would skip checking agentOverhead for
+            # Windows system as the agent is only run for very short period of time. We may improve the accuracy of
+            # measuring the overhead by using time.perf_counter_ns for Windows in the future.
+            assert agent_metadata["agentOverhead"]["timeInMs"]
+            assert agent_metadata["cpuTimeInSeconds"] > 0
