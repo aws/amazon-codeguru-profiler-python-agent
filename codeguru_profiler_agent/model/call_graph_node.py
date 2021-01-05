@@ -81,7 +81,7 @@ class CallGraphNode:
     def _insert_new_child(self, new_child):
         """
         FIXME: We still need to review the memory vs cpu tradeoffs of using a tuple vs an list vs a dictionary here,
-        and if we should keep it sorted (like the Java and Ruby agents) or keep using the current approach.
+        and if we should keep it sorted (like the Java agent) or keep using the current approach.
 
         Right now we use a tuple as it uses the least amount of memory (and it simplifies the code, as the empty tuple
         is reused by python):
