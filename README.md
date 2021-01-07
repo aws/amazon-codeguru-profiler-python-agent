@@ -1,11 +1,10 @@
-## My Project
+## Amazon CodeGuru Profiler Python Agent
 
-TODO: Fill this README out!
+For more details, check the documentation: https://docs.aws.amazon.com/codeguru/latest/profiler-ug/what-is-codeguru-profiler.html
 
-Be sure to:
+## Release to PyPI
 
-* Change the title in this README
-* Edit your repository description on GitHub
+Use the `setup.py` script to create the archive.
 
 ## Security
 
