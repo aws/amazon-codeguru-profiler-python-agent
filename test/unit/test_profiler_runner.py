@@ -88,9 +88,7 @@ class TestProfilerRunner:
         self.profiler_runner.start()
         # still it is safer to wait until the new config has been applied
         wait_for(lambda: AgentConfiguration.get().reporting_interval.total_seconds() == 151)
-        # sometimes it takes a few milliseconds for the scheduler to be updated with the AgentConfiguration,
-        # so let's sleep for 100 ms
-        sleep(0.1)
+        wait_for(lambda: self.profiler_runner.scheduler._get_next_delay_seconds() == 151)
 
         assert self.profiler_runner.scheduler._get_next_delay_seconds() == 151
         self.mock_collector.add.assert_not_called()
