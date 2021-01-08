@@ -14,9 +14,9 @@ Check the GitHub repository at [aws/amazon-codeguru-profiler-python-agent](https
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
-## How to release to PyPI
+## How to release
 
-Use the `setup.py` script to create the archive.
+See [DEVELOPMENT](DEVELOPMENT.md) for more information.
 
 ## Security
 
