@@ -18,9 +18,6 @@ from codeguru_profiler_agent.model.sample import Sample
 
 
 @pytest.mark.skipif(
-    # TODO FIXME Remove the conditions for skipping this on Amazonian fleets when we move fully to GitHub.
-    socket.gethostname().startswith("pb-worker-prod") or
-    socket.gethostname().startswith("coverlay-") or
     socket.getfqdn().endswith("internal.cloudapp.net"),  # hosts running ubuntu and windows in GitHub
     socket.getfqdn().endswith("ip6.arpa"),  # hosts running macs in GitHub
     reason="This integration test is skipped on any shared fleet from Amazon or GitHub "

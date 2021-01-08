@@ -31,6 +31,7 @@ DEFAULT_MEMORY_LIMIT_BYTES = 10 * 1024 * 1024
 # [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
 # https://bandit.readthedocs.io/en/latest/plugins/b108_hardcoded_tmp_directory.html
 # This file can be used by the customer as kill switch for the Profiler.
+# TODO FIXME Consider making this work for Windows.
 KILLSWITCH_FILEPATH = "/var/tmp/killProfiler" #nosec
 
 logger = logging.getLogger(__name__)

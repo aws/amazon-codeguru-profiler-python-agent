@@ -1,7 +1,7 @@
 from datetime import timedelta
-import time
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from test.pytestutils import before
+from test.help_utils import wait_for
 from mock import MagicMock
 
 from codeguru_profiler_agent.profiler_runner import ProfilerRunner
@@ -82,21 +82,11 @@ class TestProfilerRunner:
     def test_when_orchestrator_says_no_to_profiler(self):
         self.agent_configuration = AgentConfiguration(should_profile=False,
                                                       sampling_interval=timedelta(seconds=2),
-                                                      reporting_interval=timedelta(seconds=150))
+                                                      reporting_interval=timedelta(seconds=151))
         # calling start in this test, it will start the scheduler and because initial delay is 0 it will execute now
         self.profiler_runner.start()
         # still it is safer to wait until the new config has been applied
-        wait_until(lambda: AgentConfiguration.get().should_profile == False)
+        wait_for(lambda: AgentConfiguration.get().reporting_interval.total_seconds() == 151)
 
-        assert self.profiler_runner.scheduler._get_next_delay_seconds() == 150
+        assert self.profiler_runner.scheduler._get_next_delay_seconds() == 151
         self.mock_collector.add.assert_not_called()
-
-
-def wait_until(predicate, max_wait_seconds=1, period_seconds=0.1):
-    start = time.time()
-    timeout = start + max_wait_seconds
-    while time.time() < timeout:
-        if predicate():
-            return True
-        time.sleep(period_seconds)
-    raise AssertionError("Predicate was never true after waiting for " + str(max_wait_seconds) + " seconds")

@@ -30,8 +30,8 @@ setup(
     description="The Python agent to be used for Amazon CodeGuru Profiler",
     long_description="https://docs.aws.amazon.com/codeguru/latest/profiler-ug/what-is-codeguru-profiler.html",
     author="Amazon Web Services",
-    url="https://github.com/aws",
-    download_url="https://github.com/aws",
+    url="https://github.com/aws/amazon-codeguru-profiler-python-agent",
+    download_url="https://github.com/aws/amazon-codeguru-profiler-python-agent",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Development Status :: 5 - Production/Stable",
