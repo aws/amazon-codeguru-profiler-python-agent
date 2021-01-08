@@ -82,11 +82,11 @@ class TestProfilerRunner:
     def test_when_orchestrator_says_no_to_profiler(self):
         self.agent_configuration = AgentConfiguration(should_profile=False,
                                                       sampling_interval=timedelta(seconds=2),
-                                                      reporting_interval=timedelta(seconds=150))
+                                                      reporting_interval=timedelta(seconds=151))
         # calling start in this test, it will start the scheduler and because initial delay is 0 it will execute now
         self.profiler_runner.start()
         # still it is safer to wait until the new config has been applied
-        wait_for(lambda: AgentConfiguration.get().should_profile is False)
+        wait_for(lambda: AgentConfiguration.get().reporting_interval.total_seconds() == 151)
 
-        assert self.profiler_runner.scheduler._get_next_delay_seconds() == 150
+        assert self.profiler_runner.scheduler._get_next_delay_seconds() == 151
         self.mock_collector.add.assert_not_called()
