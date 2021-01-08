@@ -3,6 +3,7 @@ from codeguru_profiler_agent.reporter.agent_configuration import AgentConfigurat
 from test.pytestutils import before
 from test.help_utils import wait_for
 from mock import MagicMock
+from time import sleep
 
 from codeguru_profiler_agent.profiler_runner import ProfilerRunner
 from codeguru_profiler_agent.profiler_disabler import ProfilerDisabler
@@ -87,6 +88,7 @@ class TestProfilerRunner:
         self.profiler_runner.start()
         # still it is safer to wait until the new config has been applied
         wait_for(lambda: AgentConfiguration.get().reporting_interval.total_seconds() == 151)
+        wait_for(lambda: self.profiler_runner.scheduler._get_next_delay_seconds() == 151)
 
         assert self.profiler_runner.scheduler._get_next_delay_seconds() == 151
         self.mock_collector.add.assert_not_called()

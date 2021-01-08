@@ -4,11 +4,17 @@ For more details, check the documentation: https://docs.aws.amazon.com/codeguru/
 
 ## How to use it
 
-This package is released to PyPI, so use it as any Python package from PyPI: https://pypi.org/project/codeguru-profiler-agent
+This package is being released to PyPI as [codeguru-profiler-agent](https://pypi.org/project/codeguru-profiler-agent), so use it as any Python package from PyPI.
 
 For a demo application that uses this agent, check our [demo application](https://github.com/aws-samples/aws-codeguru-profiler-python-demo-application).
 
-## Release to PyPI
+## How to contribute
+
+Check the GitHub repository at [aws/amazon-codeguru-profiler-python-agent](https://github.com/aws/amazon-codeguru-profiler-python-agent).
+
+See [CONTRIBUTING](CONTRIBUTING.md) for details.
+
+## How to release to PyPI
 
 Use the `setup.py` script to create the archive.
 
@@ -18,5 +24,5 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the Apache-2.0 License. See [LICENSE](LICENSE) for details.
 
