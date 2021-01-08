@@ -1,4 +1,6 @@
 class Sample:
+    __slots__ = ["stacks", "attempted_sample_threads_count", "seen_threads_count"]
+
     def __init__(self, stacks, attempted_sample_threads_count=0, seen_threads_count=0):
         """
         :param stacks: list of lists; each list is a list of Frame object representing a thread stack in bottom (of thread stack) to top (of thread stack) order

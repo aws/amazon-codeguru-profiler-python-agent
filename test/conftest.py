@@ -1,4 +1,2 @@
-import pytest
-
-# Enable pytestutils @focus decoration
-pytest_plugins = "test.pytestutils_focus"
+# Enable pytestutils decoration
+pytest_plugins = "test.pytestutils"

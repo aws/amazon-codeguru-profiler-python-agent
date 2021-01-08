@@ -22,8 +22,7 @@ def load_handler(bootstrap_module, env=os.environ, original_handler_env_key=HAND
         if hasattr(bootstrap_module, '_get_handler'):
             customer_handler_function = bootstrap_module._get_handler(original_handler_name)
         else:
-            # Support for python 3.6 bootstrap which is different. It is starting to be quite hacky at this point.
-            # We will need to discuss if it is worth handling this case and if we can do it in a better way.
+            # TODO FIXME Review if the support for python 3.6 bootstrap can be improved.
             # This returns both a init_handler and the function, we apply the init right away as we are in init process
             init_handler, customer_handler_function = bootstrap_module._get_handlers(
                 handler=original_handler_name,
