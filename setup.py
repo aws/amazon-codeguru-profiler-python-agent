@@ -25,7 +25,7 @@ def find_version(*file_paths):
 setup(
     name="codeguru_profiler_agent",
     version=find_version("codeguru_profiler_agent/agent_metadata", "agent_metadata.py"),
-    packages=find_packages(exclude="test"),
+    packages=find_packages(exclude=("test",)),
 
     description="The Python agent to be used for Amazon CodeGuru Profiler",
     long_description="https://docs.aws.amazon.com/codeguru/latest/profiler-ug/what-is-codeguru-profiler.html",
