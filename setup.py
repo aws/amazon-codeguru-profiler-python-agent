@@ -28,7 +28,8 @@ setup(
     packages=find_packages(exclude=("test",)),
 
     description="The Python agent to be used for Amazon CodeGuru Profiler",
-    long_description="https://docs.aws.amazon.com/codeguru/latest/profiler-ug/what-is-codeguru-profiler.html",
+    long_description=read("README.md"),
+    long_description_content_type="text/markdown",
     author="Amazon Web Services",
     url="https://github.com/aws/amazon-codeguru-profiler-python-agent",
     download_url="https://github.com/aws/amazon-codeguru-profiler-python-agent",
