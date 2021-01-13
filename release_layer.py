@@ -7,7 +7,7 @@ import os
 import json
 
 # The following values are used in the documentation, so any change of them requires updates to the documentation.
-LAYER_NAME = 'AWSCodeGuruProfilerPythonAgentLambdaLayerTestDev'
+LAYER_NAME = 'AWSCodeGuruProfilerPythonAgentLambdaLayer'
 SUPPORTED_VERSIONS = ['3.6', '3.7', '3.8']
 EXEC_SCRIPT_FILE_NAME = 'codeguru_profiler_lambda_exec'
 
@@ -56,6 +56,10 @@ def read(*parts):
 
 
 def find_version(*file_paths):
+    """
+    To keep track of which PyPI version corresponds to which layer version we cross reference the PyPI x¬version in the layer description.
+    This function is used to read the PyPi directly from the source code.
+    """
     version_file = read(*file_paths)
     version_match = re.search(r"^__agent_version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
     if version_match:
