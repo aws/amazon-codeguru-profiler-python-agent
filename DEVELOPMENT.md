@@ -29,4 +29,15 @@
 
 ## How to release the Lambda Layer.
 
-Check internal instructions.
+The layer is used for profiling AWS lambda functions. The layer contains only our module source code as `boto3` is already available in a lambda environment.
+
+Check internal instructions for what credentials to use.
+
+1. Checkout the last version of the `main` branch locally after you did the release to PyPI.
+
+2. Run the following command in this package to publish a new version for the layer that will be available to the public immediately.
+    ```
+    python release_layer.py
+    ```
+
+3. Update the documentation with the ARN that was printed.
