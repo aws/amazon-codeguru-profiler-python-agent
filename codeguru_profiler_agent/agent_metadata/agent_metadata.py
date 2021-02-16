@@ -9,7 +9,7 @@ from codeguru_profiler_agent.agent_metadata.fleet_info import DefaultFleetInfo
 # NOTE: Please do not alter the value for the following constants without the full knowledge of the use of them.
 # These constants are used in several scripts, including setup.py.
 __agent_name__ = "CodeGuruProfiler-python"
-__agent_version__ = "1.0.2-dev.1"
+__agent_version__ = "1.0.2"
 
 
 def look_up_fleet_info(
