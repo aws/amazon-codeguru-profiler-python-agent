@@ -21,7 +21,7 @@
 
 #### Publish package to Live PyPI
 
-- If you want to release to the Live registry of PyPI to be used by customers, go to the [Releases tab]([here](https://test.pypi.org/project/codeguru-profiler-agent/) and edit your pre-releases as prod release.
+- If you want to release to the Live registry of PyPI to be used by customers, go to the [Releases tab](https://github.com/aws/amazon-codeguru-profiler-python-agent/releases) and edit your pre-releases as prod release.
 
 - This will trigger publishing the package to the Live Registry of PyPI, and you can track it in the [Actions tab](https://github.com/aws/amazon-codeguru-profiler-python-agent/actions).
 
