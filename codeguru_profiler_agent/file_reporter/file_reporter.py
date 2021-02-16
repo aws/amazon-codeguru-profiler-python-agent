@@ -35,7 +35,9 @@ class FileReporter(Reporter):
         """
         pass
 
-    def report(self, profile, agent_metadata=None, timestamp=datetime.datetime.now()):
+    def report(self, profile, agent_metadata=None, timestamp=None):
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
         output_filename = self._output_filename_for(timestamp)
 
         logger.info("Writing profile to '{}'".format(output_filename))
