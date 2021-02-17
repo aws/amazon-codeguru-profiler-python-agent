@@ -26,7 +26,7 @@ setup(
     name="codeguru_profiler_agent",
     version=find_version("codeguru_profiler_agent/agent_metadata", "agent_metadata.py"),
     packages=find_packages(exclude=("test",)),
-
+    include_package_data=True,
     description="The Python agent to be used for Amazon CodeGuru Profiler",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
