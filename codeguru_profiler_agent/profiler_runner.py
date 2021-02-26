@@ -86,10 +86,10 @@ class ProfilerRunner:
 
         # after the refresh we may be working on a profile
         if self.is_profiling_in_progress:
-            sample = self.sampler.sample()
-            self.collector.add(sample)
             if self.collector.flush():
                 self.is_profiling_in_progress = False
+            sample = self.sampler.sample()
+            self.collector.add(sample)
         return True
 
     def is_running(self):
