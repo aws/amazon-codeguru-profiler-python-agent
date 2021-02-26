@@ -140,6 +140,6 @@ class Profile:
     def __str__(self):
         return "Profile(profiling_group_name=" + self.profiling_group_name \
                + ", start=" + to_iso(self.start) \
-               + ', end=' + to_iso(self.end) \
+               + ', end=' + "not set" if self.end is None else to_iso(self.end) \
                + ', duration_ms=' + str(self.get_active_millis_since_start()) \
                + ')'
