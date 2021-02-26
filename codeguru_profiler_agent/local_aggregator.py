@@ -102,7 +102,6 @@ class LocalAggregator:
     def _report_profile(self, now):
         self.last_report_attempted = now
         self._add_overhead_metric_to_profile()
-        self.profile.end = now
         logger.info("Attempting to report profile data: " + str(self.profile))
         if self.profile.is_empty():
             logger.info("Report was cancelled because it was empty")

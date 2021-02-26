@@ -63,7 +63,7 @@ class Profile:
 
     def add(self, sample):
         """
-        Merge Sample into the call graph.
+        Merge Sample into the call graph and update profile end time pointing to the last sample time.
         """
         self.total_attempted_sample_threads_count += \
             sample.attempted_sample_threads_count
@@ -73,6 +73,8 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
+
+        self.end = current_milli_time(clock=self._clock)
 
     def set_overhead_ms(self, duration_timedelta):
         """

@@ -32,6 +32,7 @@ class TestAdd(TestProfile):
     @before
     def before(self):
         super().before()
+        self.turn_clock(1)
 
     @pytest.mark.parametrize("stacks, expected", [
         ([[Frame("method_one"), Frame("method_two"), Frame("method_three")]], {
@@ -254,6 +255,12 @@ class TestAdd(TestProfile):
 
         assert (_convert_profile_into_dict(self.subject) == expected)
 
+    def test_add_stack_set_profile_end(self):
+        self.subject.add(Sample(stacks=[[Frame("frame1")]], attempted_sample_threads_count=12))
+        test_end_time = self.subject.start + 1000
+        assert self.subject.end == test_end_time
+
+
     def test_it_keeps_the_total_sum_of_the_attempted_sample_threads_count_values(
             self):
         sample1 = Sample(stacks=[[Frame("frame1")]], attempted_sample_threads_count=12)
@@ -454,6 +461,7 @@ class TestGetAverageThreadWeight(TestProfile):
     @before
     def before(self):
         super().before()
+        self.turn_clock(1)
 
     def test_it_returns_the_average_thread_weight_for_the_samples_in_the_profile(
             self):
