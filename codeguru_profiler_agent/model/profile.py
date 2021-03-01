@@ -43,9 +43,9 @@ class Profile:
     @end.setter
     def end(self, value):
         self._validate_positive_number(value)
-        if value <= self.start:
+        if value < self.start:
             raise ValueError(
-                "Profile end value must be bigger than {}, got {}".format(self.start, value))
+                "Profile end value must be greater than or equal to {}, got {}".format(self.start, value))
         self._end = value
         # this is the total cpu time spent in this application since start, not just the overhead
         self.cpu_time_seconds = time.process_time() - self._start_process_time
@@ -63,7 +63,7 @@ class Profile:
 
     def add(self, sample):
         """
-        Merge Sample into the call graph.
+        Merge Sample into the call graph and update profile end time pointing to the last sample time.
         """
         self.total_attempted_sample_threads_count += \
             sample.attempted_sample_threads_count
@@ -73,6 +73,8 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
+
+        self.end = current_milli_time(clock=self._clock)
 
     def set_overhead_ms(self, duration_timedelta):
         """
@@ -138,6 +140,6 @@ class Profile:
     def __str__(self):
         return "Profile(profiling_group_name=" + self.profiling_group_name \
                + ", start=" + to_iso(self.start) \
-               + ', end=' + to_iso(self.end) \
+               + ', end=' + "none" if self.end is None else to_iso(self.end) \
                + ', duration_ms=' + str(self.get_active_millis_since_start()) \
                + ')'
