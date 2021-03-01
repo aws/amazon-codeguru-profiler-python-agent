@@ -70,7 +70,9 @@ class TestLiveProfiling:
                 finally:
                     profiler.stop()
 
-                assert wrapped_add.call_count >= 3
+                # We should only see 2 sample in 3 seconds as the sequence should happen in the order of
+                # no flush -> sample -> no flush -> sample -> flush (without sample)
+                assert wrapped_add.call_count >= 2
                 assert wrapped_post_agent_profile.call_count >= 1
                 assert wrapped_configure_agent.call_count >= 1
                 assert AgentConfiguration.get().sampling_interval == timedelta(seconds=1)

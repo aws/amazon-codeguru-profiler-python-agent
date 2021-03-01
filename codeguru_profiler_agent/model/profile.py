@@ -43,9 +43,9 @@ class Profile:
     @end.setter
     def end(self, value):
         self._validate_positive_number(value)
-        if value < self.start:
+        if value <= self.start:
             raise ValueError(
-                "Profile end value must be greater than or equal to {}, got {}".format(self.start, value))
+                "Profile end value must be greater than {}, got {}".format(self.start, value))
         self._end = value
         # this is the total cpu time spent in this application since start, not just the overhead
         self.cpu_time_seconds = time.process_time() - self._start_process_time

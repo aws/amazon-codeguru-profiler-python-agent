@@ -88,6 +88,7 @@ class ProfilerRunner:
         if self.is_profiling_in_progress:
             if self.collector.flush():
                 self.is_profiling_in_progress = False
+                return True
             sample = self.sampler.sample()
             self.collector.add(sample)
         return True
