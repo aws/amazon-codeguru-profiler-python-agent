@@ -45,7 +45,7 @@ class Profile:
         self._validate_positive_number(value)
         if value < self.start:
             raise ValueError(
-                "Profile end value must be greater than or equals to {}, got {}".format(self.start, value))
+                "Profile end value must be greater than or equal to {}, got {}".format(self.start, value))
         self._end = value
         # this is the total cpu time spent in this application since start, not just the overhead
         self.cpu_time_seconds = time.process_time() - self._start_process_time
@@ -140,6 +140,6 @@ class Profile:
     def __str__(self):
         return "Profile(profiling_group_name=" + self.profiling_group_name \
                + ", start=" + to_iso(self.start) \
-               + ', end=' + "not set" if self.end is None else to_iso(self.end) \
+               + ', end=' + "none" if self.end is None else to_iso(self.end) \
                + ', duration_ms=' + str(self.get_active_millis_since_start()) \
                + ')'
