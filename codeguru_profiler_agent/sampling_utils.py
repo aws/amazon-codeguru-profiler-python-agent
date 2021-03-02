@@ -10,6 +10,7 @@ from codeguru_profiler_agent.model.frame import Frame
 TRUNCATED_FRAME = Frame(name="<Truncated>")
 
 TIME_SLEEP_FRAME = Frame(name="<Sleep>")
+LXML_SCHEMA_FRAME = Frame(name="lxml.etree:XMLSchema:__init__")
 
 
 def get_stacks(threads_to_sample, excluded_threads, max_depth):
@@ -69,14 +70,16 @@ def _extract_stack(stack, max_depth):
         )
     if len(stack) < max_depth:
         last_frame, last_frame_line_no = stack[-1]
-        _maybe_append_time_sleep(result, last_frame, last_frame_line_no)
+        _maybe_append_synthetic_frame(result, last_frame, last_frame_line_no)
     return result
 
 
-def _maybe_append_time_sleep(result, frame, line_no):
+def _maybe_append_synthetic_frame(result, frame, line_no):
     line = linecache.getline(frame.f_code.co_filename, line_no).strip()
     if "sleep(" in line:
         result.append(TIME_SLEEP_FRAME)
+    elif "etree.XMLSchema(" in line:
+        result.append(LXML_SCHEMA_FRAME)
 
 
 def _extract_frames(end_frame, max_depth):
