@@ -70,12 +70,12 @@ class TestLiveProfiling:
                 finally:
                     profiler.stop()
 
-                # We should see at least 2 sample in 4 seconds as the sequence should happen in the order of
+                # We should see at least 2 samples in 4 seconds as the sequence should happen in the order of
                 # initial delay (1 second)
                 # After 1 second, no flush -> sample
                 # After 2 seconds, it attempt to flush (possibly succeed) -> sample/ no sample
                 # After 3 seconds, it attempt to flush (must succeed if it did not flush before) -> no sample/ sample
-                # After 4 seconds, no flush -> sample
+                # After 4 seconds, no flush -> sample (if profiler has not stopped yet)
                 assert wrapped_add.call_count >= 2
                 assert wrapped_post_agent_profile.call_count >= 1
                 assert wrapped_configure_agent.call_count >= 1

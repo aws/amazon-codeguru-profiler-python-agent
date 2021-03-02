@@ -73,10 +73,10 @@ class TestProfilerRunner:
         self.profiler_runner._profiling_command()
         self.mock_collector.refresh_configuration.assert_called_once()
 
-    def test_when_it_does_not_sample_when_it_reports(self):
+    def test_when_it_reports_it_does_not_sample(self):
         self.is_time_to_report = True
 
-        assert(self.profiler_runner._profiling_command())
+        assert self.profiler_runner._profiling_command()
         self.mock_collector.flush.assert_called_once()
         self.mock_collector.add.assert_not_called()
 
