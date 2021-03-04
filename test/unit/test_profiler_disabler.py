@@ -72,15 +72,15 @@ class TestWhenAnyFails(TestProfilerDisabler):
 
     def test_it_stops_profiling_if_killswitch_is_on(self):
         self.disabler.killswitch.is_killswitch_on = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        assert self.disabler.should_stop_sampling(self.profiler)
 
     def test_it_stops_profiling_if_memory_limit_is_reached(self):
         self.disabler._is_memory_limit_reached = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        assert self.disabler.should_stop_sampling(self.profiler)
 
     def test_it_stops_profiling_if_process_duration_is_reached(self):
         self.disabler.cpu_usage_check.is_cpu_usage_limit_reached = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        assert self.disabler.should_stop_sampling(self.profiler)
 
 
 class TestKillSwitch:

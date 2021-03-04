@@ -51,7 +51,7 @@ class ProfilerRunner:
 
         :return: True if the profiler was started successfully; False otherwise.
         """
-        if self.profiler_disabler.should_stop_profiling():
+        if self.profiler_disabler.should_stop_sampling():
             logger.info("Profiler will not start.")
             return False
         self.scheduler.start()
@@ -71,26 +71,35 @@ class ProfilerRunner:
             if self._first_execution:
                 self.collector.setup()
                 self._first_execution = False
-            return self._run_profiler()
+            sample_result = self._run_profiler()
+            if sample_result.success and sample_result.should_check_overall:
+                if self.profiler_disabler.should_stop_profiling(profile=self.collector.profile):
+                    return False
+                if sample_result.should_reset:
+                    self.collector.reset()
+                    return True
+            return sample_result.success
         except:
             logger.info("An unexpected issue caused the profiling command to terminate.", exc_info=True)
             return False
 
     @with_timer("runProfiler")
     def _run_profiler(self):
-        if self.profiler_disabler.should_stop_profiling(self.collector.profile):
-            return False
+        if self.profiler_disabler.should_stop_sampling(self.collector.profile):
+            return RunProfilerStatus(success=False, should_check_overall=False, should_reset=False)
 
+        refreshed_config = False
         if not self.is_profiling_in_progress:
             self._refresh_configuration()
+            refreshed_config = True
 
         # after the refresh we may be working on a profile
         if self.is_profiling_in_progress:
-            if self.collector.flush():
+            if self.collector.flush(reset=False):
                 self.is_profiling_in_progress = False
-                return True
+                return RunProfilerStatus(success=True, should_check_overall=True, should_reset=True)
             self._sample_and_aggregate()
-        return True
+        return RunProfilerStatus(success=True, should_check_overall=refreshed_config, should_reset=False)
 
     @with_timer("sampleAndAggregate")
     def _sample_and_aggregate(self):
@@ -129,3 +138,10 @@ class ProfilerRunner:
         """
         self.scheduler.pause(block)
         self.collector.profile.pause()
+
+
+class RunProfilerStatus:
+    def __init__(self, success, should_check_overall, should_reset):
+        self.success = success
+        self.should_check_overall = should_check_overall
+        self.should_reset = should_reset

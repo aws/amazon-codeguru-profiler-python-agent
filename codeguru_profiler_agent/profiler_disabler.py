@@ -20,10 +20,15 @@ class ProfilerDisabler:
         self.killswitch = KillSwitch(environment['killswitch_filepath'], clock)
         self.memory_limit_bytes = environment['memory_limit_bytes']
 
-    def should_stop_profiling(self, profile=None):
+    def should_stop_sampling(self, profile=None):
         return (self.killswitch.is_killswitch_on()
                 or self.cpu_usage_check.is_cpu_usage_limit_reached(profile)
                 or profile is not None and self._is_memory_limit_reached(profile))
+
+    def should_stop_profiling(self, profile=None):
+        return self.killswitch.is_killswitch_on() or \
+               (profile is not None and self.cpu_usage_check.is_overall_cpu_limit_reached(profile)
+                and self._is_memory_limit_reached(profile))
 
     def _is_memory_limit_reached(self, profile):
         return profile.get_memory_usage_bytes() > self.memory_limit_bytes
@@ -38,9 +43,29 @@ class CpuUsageCheck:
     def __init__(self, timer):
         self.timer = timer
 
+    # This function carries out an overall cpu limit check that covers the cpu overhead caused for the full
+    # sampling cycle: sample -> aggregate -> report -> refresh config. This has to be called with a profile
+    # which captured the total cycle cpu time usage. hnhg
+    def is_overall_cpu_limit_reached(self, profile):
+        profiler_metric = self.timer.metrics.get("runProfiler")
+        if not profile or not profiler_metric or profiler_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
+            return False
+
+        used_time_percentage = 100 * profiler_metric.total/profile.get_active_millis_since_start()
+
+        if used_time_percentage >= AgentConfiguration.get().cpu_limit_percentage:
+            logger.debug(self.timer.metrics)
+            logger.info(
+                "Profiler cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler.".format(
+                    used_time_percentage, AgentConfiguration.get().cpu_limit_percentage))
+            return True
+        else:
+            return False
+
     def is_cpu_usage_limit_reached(self, profile=None):
         sample_and_aggregate_metric = self.timer.metrics.get("sampleAndAggregate")
-        if not sample_and_aggregate_metric or sample_and_aggregate_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
+        if not sample_and_aggregate_metric or \
+                sample_and_aggregate_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
             return False
 
         sampling_interval_seconds = self._get_average_sampling_interval_seconds(profile)

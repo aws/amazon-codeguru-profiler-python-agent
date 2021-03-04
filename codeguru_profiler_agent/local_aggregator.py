@@ -44,7 +44,7 @@ class LocalAggregator:
         self.memory_limit_bytes = environment["memory_limit_bytes"]
         self.last_report_attempted = current_milli_time(clock=self.clock)
 
-        self._reset()
+        self.reset()
 
     def add(self, sample):
         """
@@ -69,7 +69,7 @@ class LocalAggregator:
                     "Profiler memory usage limit has been reached")
             self.flush(force=True)
 
-    def _reset(self):
+    def reset(self):
         self.profile = self.profile_factory(
             profiling_group_name=self.profiling_group_name,
             sampling_interval_seconds=AgentConfiguration.get().sampling_interval.total_seconds(),
@@ -80,7 +80,7 @@ class LocalAggregator:
         self.timer.reset()
 
     @with_timer("flush")
-    def flush(self, force=False):
+    def flush(self, force=False, reset=True):
         now = current_milli_time(clock=self.clock)
         reported = False
         if not force and not self._is_over_reporting_interval(now):
@@ -92,8 +92,8 @@ class LocalAggregator:
             self._report_profile(now)
             reported = True
 
-        if force or reported:
-            self._reset()
+        if force or (reset and reported):
+            self.reset()
         return reported
 
     def refresh_configuration(self):
