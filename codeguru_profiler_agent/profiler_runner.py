@@ -89,9 +89,13 @@ class ProfilerRunner:
             if self.collector.flush():
                 self.is_profiling_in_progress = False
                 return True
-            sample = self.sampler.sample()
-            self.collector.add(sample)
+            self._sample_and_aggregate()
         return True
+
+    @with_timer("sampleAndAggregate")
+    def _sample_and_aggregate(self):
+        sample = self.sampler.sample()
+        self.collector.add(sample)
 
     def is_running(self):
         return self.scheduler.is_running()

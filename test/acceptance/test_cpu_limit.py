@@ -31,6 +31,6 @@ class TestCPULimit:
             # With sampling_interval to be 0.01 seconds, having runProfiler as 0.5 seconds should breach
             # the cpu limit. We need to sample 20 times before we check the CPU limit
             for i in range(20):
-                self.timer.record('runProfiler', 0.5)
+                self.timer.record('sampleAndAggregate', 0.5)
 
             assert wait_for(lambda: not self.profiler.is_running(), timeout_seconds=5)

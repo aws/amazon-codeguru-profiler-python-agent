@@ -150,7 +150,7 @@ class TestCpuUsageCheck:
         self.timer = Timer()
         self.profile = Mock(spec=Profile)
         for i in range(20):
-            self.timer.record('runProfiler', 0.5)
+            self.timer.record('sampleAndAggregate', 0.5)
         set_agent_config(sampling_interval_seconds=1, cpu_limit_percentage=10)
         self.process_duration_check = CpuUsageCheck(self.timer)
 
@@ -222,7 +222,7 @@ class TestWhenTimerDoesNotHaveEnoughMeasures(TestCpuUsageCheck):
     def test_it_returns_false(self):
         self.timer.reset()
         for i in range(4):
-            self.timer.record('runProfiler', 0.5)
+            self.timer.record('sampleAndAggregate', 0.5)
         assert not self.process_duration_check.is_cpu_usage_limit_reached()
 
 

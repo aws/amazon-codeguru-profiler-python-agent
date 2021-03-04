@@ -39,12 +39,12 @@ class CpuUsageCheck:
         self.timer = timer
 
     def is_cpu_usage_limit_reached(self, profile=None):
-        profiler_metric = self.timer.metrics.get("runProfiler")
-        if not profiler_metric or profiler_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
+        sample_and_aggregate_metric = self.timer.metrics.get("sampleAndAggregate")
+        if not sample_and_aggregate_metric or sample_and_aggregate_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
             return False
 
         sampling_interval_seconds = self._get_average_sampling_interval_seconds(profile)
-        used_time_percentage = 100 * profiler_metric.average() / sampling_interval_seconds
+        used_time_percentage = 100 * sample_and_aggregate_metric.average() / sampling_interval_seconds
 
         if used_time_percentage >= AgentConfiguration.get().cpu_limit_percentage:
             logger.debug(self.timer.metrics)
