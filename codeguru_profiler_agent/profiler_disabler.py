@@ -2,7 +2,6 @@ import os
 import time
 import logging
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
-from codeguru_profiler_agent.utils.time import current_milli_time
 
 logger = logging.getLogger(__name__)
 CHECK_KILLSWITCH_FILE_INTERVAL_SECONDS = 60
@@ -21,17 +20,17 @@ class ProfilerDisabler:
         self.memory_limit_bytes = environment['memory_limit_bytes']
 
     def should_stop_sampling(self, profile=None):
-        return (self.killswitch.is_killswitch_on()
-                or self.cpu_usage_check.is_cpu_usage_limit_reached(profile)
-                or profile is not None and self._is_memory_limit_reached(profile))
+        return self.killswitch.is_killswitch_on() \
+               or self.cpu_usage_check.is_sampling_cpu_usage_limit_reached(profile) \
+               or self._is_memory_limit_reached(profile)
 
     def should_stop_profiling(self, profile=None):
-        return self.killswitch.is_killswitch_on() or \
-               (profile is not None and self.cpu_usage_check.is_overall_cpu_limit_reached(profile)
-                and self._is_memory_limit_reached(profile))
+        return self.killswitch.is_killswitch_on() \
+               or self.cpu_usage_check.is_overall_cpu_usage_limit_reached(profile) \
+               or self._is_memory_limit_reached(profile)
 
     def _is_memory_limit_reached(self, profile):
-        return profile.get_memory_usage_bytes() > self.memory_limit_bytes
+        return False if profile is None else profile.get_memory_usage_bytes() > self.memory_limit_bytes
 
 
 class CpuUsageCheck:
@@ -44,25 +43,25 @@ class CpuUsageCheck:
         self.timer = timer
 
     # This function carries out an overall cpu limit check that covers the cpu overhead caused for the full
-    # sampling cycle: sample -> aggregate -> report -> refresh config. This has to be called with a profile
-    # which captured the total cycle cpu time usage. hnhg
-    def is_overall_cpu_limit_reached(self, profile):
+    # sampling cycle: sample -> aggregate -> report -> refresh config. We expect this function to be called after
+    # configuration refresh and profile submission.
+    def is_overall_cpu_usage_limit_reached(self, profile=None):
         profiler_metric = self.timer.metrics.get("runProfiler")
         if not profile or not profiler_metric or profiler_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
             return False
 
-        used_time_percentage = 100 * profiler_metric.total/profile.get_active_millis_since_start()
+        used_time_percentage = 100 * profiler_metric.total/(profile.get_active_millis_since_start()/1000)
 
         if used_time_percentage >= AgentConfiguration.get().cpu_limit_percentage:
             logger.debug(self.timer.metrics)
             logger.info(
-                "Profiler cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler.".format(
-                    used_time_percentage, AgentConfiguration.get().cpu_limit_percentage))
+                "Profiler overall cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler."
+                .format(used_time_percentage, AgentConfiguration.get().cpu_limit_percentage))
             return True
         else:
             return False
 
-    def is_cpu_usage_limit_reached(self, profile=None):
+    def is_sampling_cpu_usage_limit_reached(self, profile=None):
         sample_and_aggregate_metric = self.timer.metrics.get("sampleAndAggregate")
         if not sample_and_aggregate_metric or \
                 sample_and_aggregate_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:
@@ -74,8 +73,8 @@ class CpuUsageCheck:
         if used_time_percentage >= AgentConfiguration.get().cpu_limit_percentage:
             logger.debug(self.timer.metrics)
             logger.info(
-                "Profiler cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler.".format(
-                    used_time_percentage, AgentConfiguration.get().cpu_limit_percentage))
+                "Profiler sampling cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler."
+                .format(used_time_percentage, AgentConfiguration.get().cpu_limit_percentage))
             return True
         else:
             return False

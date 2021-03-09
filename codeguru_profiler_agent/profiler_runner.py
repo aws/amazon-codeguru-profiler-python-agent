@@ -51,7 +51,7 @@ class ProfilerRunner:
 
         :return: True if the profiler was started successfully; False otherwise.
         """
-        if self.profiler_disabler.should_stop_sampling():
+        if self.profiler_disabler.should_stop_profiling():
             logger.info("Profiler will not start.")
             return False
         self.scheduler.start()
