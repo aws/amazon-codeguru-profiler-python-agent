@@ -46,7 +46,7 @@ class CpuUsageCheck:
         """
         This function carries out an overall cpu limit check that covers the cpu overhead caused for the full
         sampling cycle: refresh config -> (sample -> aggregate) * n -> profile submission. We expect this function to
-        be called after configuration refresh and profile submission.
+        be called after profile submission.
         """
         profiler_metric = self.timer.metrics.get("runProfiler")
         if not profile or not profiler_metric or profiler_metric.counter < MINIMUM_MEASURES_IN_DURATION_METRICS:

@@ -72,12 +72,11 @@ class ProfilerRunner:
                 self.collector.setup()
                 self._first_execution = False
             sample_result = self._run_profiler()
-            if sample_result.success and sample_result.should_check_overall:
+            if sample_result.success and sample_result.is_end_of_cycle:
                 if self.profiler_disabler.should_stop_profiling(profile=self.collector.profile):
                     return False
-                if sample_result.should_reset:
-                    self.collector.reset()
-                    return True
+                self.collector.reset()
+                return True
             return sample_result.success
         except:
             logger.info("An unexpected issue caused the profiling command to terminate.", exc_info=True)
@@ -86,20 +85,18 @@ class ProfilerRunner:
     @with_timer("runProfiler")
     def _run_profiler(self):
         if self.profiler_disabler.should_stop_sampling(self.collector.profile):
-            return RunProfilerStatus(success=False, should_check_overall=False, should_reset=False)
+            return RunProfilerStatus(success=False, is_end_of_cycle=False)
 
-        refreshed_config = False
         if not self.is_profiling_in_progress:
             self._refresh_configuration()
-            refreshed_config = True
 
         # after the refresh we may be working on a profile
         if self.is_profiling_in_progress:
             if self.collector.flush(reset=False):
                 self.is_profiling_in_progress = False
-                return RunProfilerStatus(success=True, should_check_overall=True, should_reset=True)
+                return RunProfilerStatus(success=True, is_end_of_cycle=True)
             self._sample_and_aggregate()
-        return RunProfilerStatus(success=True, should_check_overall=refreshed_config, should_reset=False)
+        return RunProfilerStatus(success=True, is_end_of_cycle=False)
 
     @with_timer("sampleAndAggregate")
     def _sample_and_aggregate(self):
@@ -141,7 +138,6 @@ class ProfilerRunner:
 
 
 class RunProfilerStatus:
-    def __init__(self, success, should_check_overall, should_reset):
+    def __init__(self, success, is_end_of_cycle):
         self.success = success
-        self.should_check_overall = should_check_overall
-        self.should_reset = should_reset
+        self.is_end_of_cycle = is_end_of_cycle

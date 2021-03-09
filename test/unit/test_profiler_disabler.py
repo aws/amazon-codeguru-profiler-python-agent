@@ -248,7 +248,7 @@ class TestIsOverallCpuUsageLimitReached():
         # timer: (0.5*20/100) * 100= 10%
         assert self.process_duration_check.is_overall_cpu_usage_limit_reached(self.profile)
 
-    def test_when_average_duragtion_is_below_limit_it_returns_false(self):
+    def test_when_average_duration_is_below_limit_it_returns_false(self):
         # timer: (0.5*20/100) * 100= 10%
         set_agent_config(cpu_limit_percentage=11)
         assert not self.process_duration_check.is_overall_cpu_usage_limit_reached(self.profile)
