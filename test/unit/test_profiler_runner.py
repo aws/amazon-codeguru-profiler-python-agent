@@ -17,6 +17,7 @@ class TestProfilerRunner:
         self.mock_collector = MagicMock(name="collector", spec=LocalAggregator)
         self.mock_disabler = MagicMock(name="profile", spec=ProfilerDisabler)
         self.mock_disabler.should_stop_profiling.return_value = False
+        self.mock_disabler.should_stop_sampling.return_value = False
         self.mock_sampler = MagicMock(name="sampler", spec=Sampler)
 
         self.environment = {
@@ -80,11 +81,21 @@ class TestProfilerRunner:
         self.mock_collector.flush.assert_called_once()
         self.mock_collector.add.assert_not_called()
 
-    def test_when_disabler_say_to_stop(self):
+    def test_when_disabler_says_to_stop_profiling_it_does_not_start(self):
         self.mock_disabler.should_stop_profiling.return_value = True
-        self.profiler_runner._profiling_command()
+
+        assert not self.profiler_runner.start()
 
         self.mock_collector.refresh_configuration.assert_not_called()
+        self.mock_collector.add.assert_not_called()
+
+    def test_when_disabler_says_to_stop_sampling_it_does_not_do_anything(self):
+        self.mock_disabler.should_stop_sampling.return_value = True
+        self.profiler_runner._profiling_command()
+
+        # As disabler.stop_sampling() returns True, _profiling_command() should not attempt to carry out any action.
+        self.mock_collector.refresh_configuration.assert_not_called()
+        self.mock_sampler.sample.assert_not_called()
         self.mock_collector.add.assert_not_called()
 
     def test_when_orchestrator_says_no_to_profiler(self):

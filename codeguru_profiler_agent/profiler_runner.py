@@ -71,27 +71,37 @@ class ProfilerRunner:
             if self._first_execution:
                 self.collector.setup()
                 self._first_execution = False
-            return self._run_profiler()
+            sample_result = self._run_profiler()
+            if sample_result.success and sample_result.is_end_of_cycle:
+                if self.profiler_disabler.should_stop_profiling(profile=self.collector.profile):
+                    return False
+                self.collector.reset()
+                return True
+            return sample_result.success
         except:
             logger.info("An unexpected issue caused the profiling command to terminate.", exc_info=True)
             return False
 
     @with_timer("runProfiler")
     def _run_profiler(self):
-        if self.profiler_disabler.should_stop_profiling(self.collector.profile):
-            return False
+        if self.profiler_disabler.should_stop_sampling(self.collector.profile):
+            return RunProfilerStatus(success=False, is_end_of_cycle=False)
 
         if not self.is_profiling_in_progress:
             self._refresh_configuration()
 
         # after the refresh we may be working on a profile
         if self.is_profiling_in_progress:
-            if self.collector.flush():
+            if self.collector.flush(reset=False):
                 self.is_profiling_in_progress = False
-                return True
-            sample = self.sampler.sample()
-            self.collector.add(sample)
-        return True
+                return RunProfilerStatus(success=True, is_end_of_cycle=True)
+            self._sample_and_aggregate()
+        return RunProfilerStatus(success=True, is_end_of_cycle=False)
+
+    @with_timer("sampleAndAggregate")
+    def _sample_and_aggregate(self):
+        sample = self.sampler.sample()
+        self.collector.add(sample)
 
     def is_running(self):
         return self.scheduler.is_running()
@@ -125,3 +135,9 @@ class ProfilerRunner:
         """
         self.scheduler.pause(block)
         self.collector.profile.pause()
+
+
+class RunProfilerStatus:
+    def __init__(self, success, is_end_of_cycle):
+        self.success = success
+        self.is_end_of_cycle = is_end_of_cycle

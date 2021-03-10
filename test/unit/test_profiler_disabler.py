@@ -28,10 +28,10 @@ def set_agent_config(sampling_interval_seconds=1, cpu_limit_percentage=DEFAULT_C
 
 
 def assert_config_sampling_interval_used(process_duration_check, profile):
-    assert process_duration_check.is_cpu_usage_limit_reached(profile)
+    assert process_duration_check.is_sampling_cpu_usage_limit_reached(profile)
 
     set_agent_config(sampling_interval_seconds=42, cpu_limit_percentage=80)
-    assert not process_duration_check.is_cpu_usage_limit_reached(profile)
+    assert not process_duration_check.is_sampling_cpu_usage_limit_reached(profile)
 
 
 class TestProfilerDisabler:
@@ -59,28 +59,57 @@ class TestSetupParameters(TestProfilerDisabler):
         assert AgentConfiguration.get().cpu_limit_percentage == DEFAULT_CPU_LIMIT_PERCENTAGE
 
 
-class TestWhenAnyFails(TestProfilerDisabler):
-    @before
-    def before(self):
-        super().before()
-        self.profiler = Mock()
-        self.disabler.killswitch = Mock()
-        self.disabler.cpu_usage_check = Mock()
-        self.disabler._is_memory_limit_reached = Mock(return_value=False)
-        self.disabler.killswitch.is_killswitch_on = Mock(return_value=False)
-        self.disabler.killswitch.is_process_duration_limit_reached = Mock(return_value=False)
+class TestShouldStopSampling:
+    class TestWhenAnyFails(TestProfilerDisabler):
+        @before
+        def before(self):
+            super().before()
+            self.disabler.killswitch = Mock()
+            self.disabler.cpu_usage_check = Mock()
+            self.disabler.cpu_usage_check.is_sampling_cpu_usage_limit_reached = Mock(return_value=False)
+            self.disabler._is_memory_limit_reached = Mock(return_value=False)
+            self.disabler.killswitch.is_killswitch_on = Mock(return_value=False)
+            self.disabler.killswitch.is_process_duration_limit_reached = Mock(return_value=False)
+            assert not self.disabler.should_stop_sampling()
 
-    def test_it_stops_profiling_if_killswitch_is_on(self):
-        self.disabler.killswitch.is_killswitch_on = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        def test_it_stops_profiling_if_killswitch_is_on(self):
+            self.disabler.killswitch.is_killswitch_on = Mock(return_value=True)
+            assert self.disabler.should_stop_sampling()
 
-    def test_it_stops_profiling_if_memory_limit_is_reached(self):
-        self.disabler._is_memory_limit_reached = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        def test_it_stops_profiling_if_memory_limit_is_reached(self):
+            self.disabler._is_memory_limit_reached = Mock(return_value=True)
+            assert self.disabler.should_stop_sampling()
 
-    def test_it_stops_profiling_if_process_duration_is_reached(self):
-        self.disabler.cpu_usage_check.is_cpu_usage_limit_reached = Mock(return_value=True)
-        assert self.disabler.should_stop_profiling(self.profiler)
+        def test_it_stops_profiling_if_process_duration_is_reached(self):
+            self.disabler.cpu_usage_check.is_sampling_cpu_usage_limit_reached = Mock(return_value=True)
+            assert self.disabler.should_stop_sampling()
+
+
+class TestShouldStopProfiling:
+    class TestWhenAnyFails(TestProfilerDisabler):
+        @before
+        def before(self):
+            super().before()
+            self.profiler = Mock()
+            self.disabler.killswitch = Mock()
+            self.disabler.cpu_usage_check = Mock()
+            self.disabler.cpu_usage_check.is_overall_cpu_usage_limit_reached = Mock(return_value=False)
+            self.disabler._is_memory_limit_reached = Mock(return_value=False)
+            self.disabler.killswitch.is_killswitch_on = Mock(return_value=False)
+            self.disabler.killswitch.is_process_duration_limit_reached = Mock(return_value=False)
+            assert not self.disabler.should_stop_profiling()
+
+        def test_it_stops_profiling_if_killswitch_is_on(self):
+            self.disabler.killswitch.is_killswitch_on = Mock(return_value=True)
+            assert self.disabler.should_stop_profiling()
+
+        def test_it_stops_profiling_if_memory_limit_is_reached(self):
+            self.disabler._is_memory_limit_reached = Mock(return_value=True)
+            assert self.disabler.should_stop_profiling()
+
+        def test_it_stops_profiling_if_process_duration_is_reached(self):
+            self.disabler.cpu_usage_check.is_overall_cpu_usage_limit_reached = Mock(return_value=True)
+            assert self.disabler.should_stop_profiling()
 
 
 class TestKillSwitch:
@@ -145,17 +174,17 @@ class TestWhenKillSwitchFileIsRemoved:
         assert not self.killswitch.is_killswitch_on()
 
 
-class TestCpuUsageCheck:
+class TestSamplingCpuUsageCheck:
     def before(self):
         self.timer = Timer()
         self.profile = Mock(spec=Profile)
         for i in range(20):
-            self.timer.record('runProfiler', 0.5)
+            self.timer.record('sampleAndAggregate', 0.5)
         set_agent_config(sampling_interval_seconds=1, cpu_limit_percentage=10)
         self.process_duration_check = CpuUsageCheck(self.timer)
 
 
-class TestGetAverageSamplingIntervalSeconds(TestCpuUsageCheck):
+class TestGetAverageSamplingIntervalSeconds(TestSamplingCpuUsageCheck):
     @before
     def before(self):
         super().before()
@@ -176,7 +205,7 @@ class TestGetAverageSamplingIntervalSeconds(TestCpuUsageCheck):
         assert CpuUsageCheck._get_average_sampling_interval_seconds(self.profile) == 23
 
 
-class TestIsCpuUsageLimitReached(TestCpuUsageCheck):
+class TestIsSamplingCpuUsageLimitReached(TestSamplingCpuUsageCheck):
     @before
     def before(self):
         super().before()
@@ -187,43 +216,70 @@ class TestIsCpuUsageLimitReached(TestCpuUsageCheck):
             yield
 
     def test_it_calls_get_average_sampling_interval_with_profile(self):
-        self.process_duration_check.is_cpu_usage_limit_reached(self.profile)
+        self.process_duration_check.is_sampling_cpu_usage_limit_reached(self.profile)
         self.get_average_sampling_interval_mock.assert_called_once_with(self.profile)
 
     def test_when_average_duration_exceeds_limit_it_returns_true(self):
         # timer: (0.5/4) * 100= 12.5%
-        assert self.process_duration_check.is_cpu_usage_limit_reached()
+        assert self.process_duration_check.is_sampling_cpu_usage_limit_reached()
 
-    def test_when_average_duragtion_is_below_limit_it_returns_false(self):
+    def test_when_average_duration_is_below_limit_it_returns_false(self):
         # timer: (0.5/4) * 100= 12.5%
         set_agent_config(cpu_limit_percentage=13)
-        assert not self.process_duration_check.is_cpu_usage_limit_reached()
+        assert not self.process_duration_check.is_sampling_cpu_usage_limit_reached()
 
     def test_when_profile_is_none_it_calls_get_average_sampling_interval_without_profile(self):
-        self.process_duration_check.is_cpu_usage_limit_reached()
+        self.process_duration_check.is_sampling_cpu_usage_limit_reached()
         self.get_average_sampling_interval_mock.assert_called_once_with(None)
 
 
-class TestWhenTimerDoesNotHaveTheKey(TestCpuUsageCheck):
+class TestIsOverallCpuUsageLimitReached():
+    @before
+    def before(self):
+        self.timer = Timer()
+        self.profile = Mock(spec=Profile)
+        for i in range(20):
+            self.timer.record('runProfiler', 0.5)
+        set_agent_config(cpu_limit_percentage=9)
+        self.process_duration_check = CpuUsageCheck(self.timer)
+        self.profile.get_active_millis_since_start = Mock(return_value=100*1000)
+
+    def test_when_average_duration_exceeds_limit_it_returns_true(self):
+        # timer: (0.5*20/100) * 100= 10%
+        assert self.process_duration_check.is_overall_cpu_usage_limit_reached(self.profile)
+
+    def test_when_average_duration_is_below_limit_it_returns_false(self):
+        # timer: (0.5*20/100) * 100= 10%
+        set_agent_config(cpu_limit_percentage=11)
+        assert not self.process_duration_check.is_overall_cpu_usage_limit_reached(self.profile)
+
+    def test_when_profile_is_none_it_returns_false(self):
+        assert not self.process_duration_check.is_overall_cpu_usage_limit_reached()
+
+
+class TestWhenTimerDoesNotHaveTheKey(TestSamplingCpuUsageCheck):
     @before
     def before(self):
         super().before()
 
     def test_it_returns_false(self):
         self.process_duration_check.timer = Timer()
-        assert not self.process_duration_check.is_cpu_usage_limit_reached()
+        assert not self.process_duration_check.is_sampling_cpu_usage_limit_reached()
 
 
-class TestWhenTimerDoesNotHaveEnoughMeasures(TestCpuUsageCheck):
+class TestWhenTimerDoesNotHaveEnoughMeasures(TestSamplingCpuUsageCheck):
     @before
     def before(self):
         super().before()
-
-    def test_it_returns_false(self):
         self.timer.reset()
         for i in range(4):
-            self.timer.record('runProfiler', 0.5)
-        assert not self.process_duration_check.is_cpu_usage_limit_reached()
+            self.timer.record('sampleAndAggregate', 0.5)
+
+    def test_sampling_cpu_usage_limit_reached_returns_false(self):
+        assert not self.process_duration_check.is_sampling_cpu_usage_limit_reached()
+
+    def test_overall_cpu_usage_limit_reached_returns_false(self):
+        assert not self.process_duration_check.is_overall_cpu_usage_limit_reached()
 
 
 class TestMemoryLimitCheck:
