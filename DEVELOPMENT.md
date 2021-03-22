@@ -5,7 +5,7 @@
 
 #### Create PR with the new agent version
 
-- Create a pull request that updates the agent's version number in the source code [here](https://github.com/aws/amazon-codeguru-profiler-python-agent/blob/main/codeguru_profiler_agent/agent_metadata/agent_metadata.py#L12). You can use directly the editor to edit the file and create the PR.
+- Create a pull request that updates the agent's version number in the source code [here](https://github.com/aws/amazon-codeguru-profiler-python-agent/blob/main/codeguru_profiler_agent/agent_metadata/agent_metadata.py#L12) and update CHANGELOG [here](https://github.com/aws/amazon-codeguru-profiler-python-agent/blob/main/CHANGELOG.rst).
 
 - Get approval from the [amazon-codeguru-profiler team](https://github.com/orgs/aws/teams/amazon-codeguru-profiler).
 
