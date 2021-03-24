@@ -9,7 +9,18 @@ DEFAULT_EC2_METADATA_URI = "http://169.254.169.254/latest/meta-data/"
 EC2_HOST_NAME_URI = DEFAULT_EC2_METADATA_URI + "local-hostname"
 EC2_HOST_INSTANCE_TYPE_URI = DEFAULT_EC2_METADATA_URI + "instance-type"
 
+# Used for IMDSv2 to retrieve API token that will be used to call the EC2 METADATA service.
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+# Bandit marks the following line as risky because it contains the word "token",
+# thought it doesn't contain any secret; ignoring with # nosec
+# https://bandit.readthedocs.io/en/latest/plugins/b105_hardcoded_password_string.html
+EC2_API_TOKEN_URI = "http://169.254.169.254/latest/api/token"  # nosec
+EC2_METADATA_TOKEN_HEADER_KEY = 'X-aws-ec2-metadata-token'  # nosec
+EC2_METADATA_TOKEN_TTL_HEADER_KEY = 'X-aws-ec2-metadata-token-ttl-seconds'  # nosec
+EC2_METADATA_TOKEN_TTL_HEADER_VALUE = '21600'  # nosec
+
 logger = logging.getLogger(__name__)
+
 
 class AWSEC2Instance(FleetInfo):
     """
@@ -27,12 +38,29 @@ class AWSEC2Instance(FleetInfo):
 
     @classmethod
     def __look_up_host_name(cls):
-        # The id of the fleet element. Eg. host name in ec2.
-        return http_get(url=EC2_HOST_NAME_URI).read().decode()
+        """
+        The id of the fleet element. Eg. host name in ec2.
+        """
+        return cls.__look_up_with_IMDSv2(EC2_HOST_NAME_URI)
 
     @classmethod
     def __look_up_instance_type(cls):
-        return http_get(url=EC2_HOST_INSTANCE_TYPE_URI).read().decode()
+        """
+        The type of the instance. Eg. m5.2xlarge
+        """
+        return cls.__look_up_with_IMDSv2(EC2_HOST_INSTANCE_TYPE_URI)
+
+    @classmethod
+    def __look_up_with_IMDSv2(cls, url):
+        return http_get(url=url,
+                        headers={EC2_METADATA_TOKEN_HEADER_KEY: cls.__look_up_ec2_api_token()}) \
+            .read().decode()
+
+    @classmethod
+    def __look_up_ec2_api_token(cls):
+        return http_get(url=EC2_API_TOKEN_URI,
+                        headers={EC2_METADATA_TOKEN_TTL_HEADER_KEY: EC2_METADATA_TOKEN_TTL_HEADER_VALUE}) \
+            .read().decode()
 
     @classmethod
     def look_up_metadata(cls):
@@ -45,10 +73,10 @@ class AWSEC2Instance(FleetInfo):
             log_exception(logger, "Unable to get Ec2 instance metadata, this is normal when running in a different "
                                   "environment (e.g. Fargate), profiler will still work")
             return None
-    
+
     def serialize_to_map(self):
         return {
-            "computeType": "aws_ec2_instance", 
-            "hostName": self.host_name, 
+            "computeType": "aws_ec2_instance",
+            "hostName": self.host_name,
             "hostType": self.host_type
         }
