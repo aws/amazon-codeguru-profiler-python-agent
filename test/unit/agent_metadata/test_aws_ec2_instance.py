@@ -44,7 +44,7 @@ class TestAWSEC2Instance:
                 httpretty.register_uri(
                     httpretty.GET,
                     EC2_API_TOKEN_URI,
-                    body="PARIOq_FXbIyL0maE9RcmrsyWtylvFh1ZDt0NrRUyNxeV1-DlpFpA==")
+                    body="fakeAndDummy")
                 yield
                 httpretty.disable()
                 httpretty.reset()
