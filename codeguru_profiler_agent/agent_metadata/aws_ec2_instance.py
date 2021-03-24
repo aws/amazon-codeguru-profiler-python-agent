@@ -37,23 +37,23 @@ class AWSEC2Instance(FleetInfo):
         return self.host_name
 
     @classmethod
-    def __look_up_host_name(cls):
+    def __look_up_host_name(cls, token):
         """
         The id of the fleet element. Eg. host name in ec2.
         """
-        return cls.__look_up_with_IMDSv2(EC2_HOST_NAME_URI)
+        return cls.__look_up_with_IMDSv2(EC2_HOST_NAME_URI, token)
 
     @classmethod
-    def __look_up_instance_type(cls):
+    def __look_up_instance_type(cls, token):
         """
         The type of the instance. Eg. m5.2xlarge
         """
-        return cls.__look_up_with_IMDSv2(EC2_HOST_INSTANCE_TYPE_URI)
+        return cls.__look_up_with_IMDSv2(EC2_HOST_INSTANCE_TYPE_URI, token)
 
     @classmethod
-    def __look_up_with_IMDSv2(cls, url):
+    def __look_up_with_IMDSv2(cls, url, token):
         return http_get(url=url,
-                        headers={EC2_METADATA_TOKEN_HEADER_KEY: cls.__look_up_ec2_api_token()}) \
+                        headers={EC2_METADATA_TOKEN_HEADER_KEY: token}) \
             .read().decode()
 
     @classmethod
@@ -65,9 +65,10 @@ class AWSEC2Instance(FleetInfo):
     @classmethod
     def look_up_metadata(cls):
         try:
+            token = cls.__look_up_ec2_api_token()
             return cls(
-                host_name=cls.__look_up_host_name(),
-                host_type=cls.__look_up_instance_type()
+                host_name=cls.__look_up_host_name(token),
+                host_type=cls.__look_up_instance_type(token)
             )
         except Exception:
             log_exception(logger, "Unable to get Ec2 instance metadata, this is normal when running in a different "
