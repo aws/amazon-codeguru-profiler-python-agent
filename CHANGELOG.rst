@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.0.5 (layer_v5)
+===================
+* Improve CPU usage checker and ProfilerDisabler (Issue #19)
+
 1.0.4 (layer_v4)
 ===================
 * Attempt to report profile before sample to avoid incorrect profile end time (Issue #15)
