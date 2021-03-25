@@ -100,13 +100,23 @@ class LocalAggregator:
         self.reporter.refresh_configuration()
 
     def _report_profile(self, now):
+        current_last_report_attempted_value = self.last_report_attempted
         self.last_report_attempted = now
         self._add_overhead_metric_to_profile()
         logger.info("Attempting to report profile data: " + str(self.profile))
         if self.profile.is_empty():
             logger.info("Report was cancelled because it was empty")
             return False
-        return self.reporter.report(self.profile)
+        is_reporting_successful = self.reporter.report(self.profile)
+        '''
+        If we attempt to create a PG in the report() call, we do not want to update the last_report_attempted_value
+        since we did not actually report a profile.
+
+        This will occur only in the case of Lambda 1-click integration.
+        '''
+        if self.reporter.is_create_pg_called_during_submit_profile:
+            self.last_report_attempted = current_last_report_attempted_value
+        return is_reporting_successful
 
     def _is_under_min_reporting_time(self, now):
         return AgentConfiguration.get().is_under_min_reporting_time(now - self.last_report_attempted)

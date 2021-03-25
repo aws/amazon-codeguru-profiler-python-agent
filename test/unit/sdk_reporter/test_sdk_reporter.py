@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import os
+
 import boto3
 
-from datetime import timedelta
+from datetime import timedelta, datetime
+
+from codeguru_profiler_agent.agent_metadata.aws_lambda import AWSLambda
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
 from mock import MagicMock
@@ -16,6 +20,9 @@ from codeguru_profiler_agent.model.profile import Profile
 from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilder
 
 profiling_group_name = "test-ProfilingGroup-name"
+lambda_one_click_profiling_group_name = "aws-lambda-testLambdaName"
+test_agent_metadata_for_lambda = AgentMetadata(
+    fleet_info=AWSLambda("arn:aws:lambda:us-east-1:111111111111:function:testLambdaName", "memory", "env", "agentId"))
 profile = Profile(profiling_group_name, 1.0, 0.5, current_milli_time())
 
 
@@ -72,6 +79,110 @@ class TestReport(TestSdkReporter):
         with self.client_stubber:
             assert self.subject.report(profile) is False
 
+    def test_creates_pg_if_onboarded_with_lambda_one_click_integration(self):
+        expected_params = {
+            'agentProfile': ANY,
+            'contentType': 'application/json',
+            'profilingGroupName': profiling_group_name
+        }
+        self.client_stubber.add_client_error('post_agent_profile',
+                                             service_error_code='ResourceNotFoundException',
+                                             service_message='Simulated ResourceNotFoundException in '
+                                                             'post_agent_profile call',
+                                             expected_params=expected_params)
+
+        expected_response_create_pg = {
+            'profilingGroup': {
+                'agentOrchestrationConfig': {
+                    'profilingEnabled': True
+                },
+                'arn': 'string',
+                'computePlatform': 'AWSLambda',
+                'createdAt': datetime(2015, 1, 1),
+                'name': 'string',
+                'profilingStatus': {
+                    'latestAgentOrchestratedAt': datetime(2015, 1, 1),
+                    'latestAgentProfileReportedAt': datetime(2015, 1, 1),
+                    'latestAggregatedProfile': {
+                        'period': 'PT5M',
+                        'start': datetime(2015, 1, 1)
+                    }
+                },
+                'tags': {
+                    'string': 'string'
+                },
+                'updatedAt': datetime(2015, 1, 1)
+            }
+        }
+        self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
+
+        expected_params_one_click = {
+            'agentProfile': ANY,
+            'contentType': 'application/json',
+            'profilingGroupName': lambda_one_click_profiling_group_name
+        }
+        self.client_stubber.add_response('post_agent_profile', {}, expected_params_one_click)
+
+        os.environ.__setitem__('AWS_CODEGURU_PROFILER_GROUP_NAME', lambda_one_click_profiling_group_name)
+        os.environ.__setitem__('HANDLER_ENV_NAME_FOR_CODEGURU', 'test-handler')
+        self.subject.metadata = test_agent_metadata_for_lambda
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+            assert self.subject.report(profile) is True
+
+    def test_create_pg_not_invoked_in_non_lambda_case(self):
+        expected_params = {
+            'agentProfile': ANY,
+            'contentType': 'application/json',
+            'profilingGroupName': profiling_group_name
+        }
+        self.client_stubber.add_client_error('post_agent_profile',
+                                             service_error_code="ResourceNotFoundException",
+                                             service_message='Simulated ResourceNotFoundException in '
+                                                             'post_agent_profile call',
+                                             expected_params=expected_params)
+
+        expected_params_post_agent_profile = {
+            'agentProfile': ANY,
+            'contentType': 'application/json',
+            'profilingGroupName': profiling_group_name
+        }
+        self.client_stubber.add_response('post_agent_profile', {}, expected_params_post_agent_profile)
+
+        expected_response_create_pg = {
+            'profilingGroup': {
+                'agentOrchestrationConfig': {
+                    'profilingEnabled': True
+                },
+                'arn': 'string',
+                'computePlatform': 'AWSLambda',
+                'createdAt': datetime(2015, 1, 1),
+                'name': 'string',
+                'profilingStatus': {
+                    'latestAgentOrchestratedAt': datetime(2015, 1, 1),
+                    'latestAgentProfileReportedAt': datetime(2015, 1, 1),
+                    'latestAggregatedProfile': {
+                        'period': 'PT5M',
+                        'start': datetime(2015, 1, 1)
+                    }
+                },
+                'tags': {
+                    'string': 'string'
+                },
+                'updatedAt': datetime(2015, 1, 1)
+            }
+        }
+        self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
+
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+            assert self.subject.report(profile) is True
+            try:
+                self.client_stubber.assert_no_pending_responses()
+                assert False
+            except AssertionError:
+                assert True
+
 
 class TestConfigureAgent(TestSdkReporter):
     @before
@@ -117,3 +228,58 @@ class TestConfigureAgent(TestSdkReporter):
         with self.client_stubber:
             self.subject.refresh_configuration()
             assert AgentConfiguration.get().should_profile is False
+
+    def test_creates_lambda_pg_if_onboarded_with_lambda_one_click_integration(self):
+        self.client_stubber.add_client_error('configure_agent',
+                                             service_error_code='ResourceNotFoundException',
+                                             service_message='Simulated ResourceNotFoundException in '
+                                                             'configure_agent call')
+
+        expected_response_create_pg = {
+            'profilingGroup': {
+                'agentOrchestrationConfig': {
+                    'profilingEnabled': True
+                },
+                'arn': 'string',
+                'computePlatform': 'AWSLambda',
+                'createdAt': datetime(2015, 1, 1),
+                'name': 'string',
+                'profilingStatus': {
+                    'latestAgentOrchestratedAt': datetime(2015, 1, 1),
+                    'latestAgentProfileReportedAt': datetime(2015, 1, 1),
+                    'latestAggregatedProfile': {
+                        'period': 'PT5M',
+                        'start': datetime(2015, 1, 1)
+                    }
+                },
+                'tags': {
+                    'string': 'string'
+                },
+                'updatedAt': datetime(2015, 1, 1)
+            }
+        }
+        self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
+
+        os.environ.__setitem__('AWS_LAMBDA_FUNCTION_MEMORY_SIZE', "512")
+        os.environ.__setitem__('AWS_EXECUTION_ENV', "AWS_Lambda_python3.8")
+        os.environ.__setitem__('AWS_CODEGURU_PROFILER_GROUP_NAME', lambda_one_click_profiling_group_name)
+        os.environ.__setitem__('HANDLER_ENV_NAME_FOR_CODEGURU', 'test-handler')
+        self.subject.metadata = test_agent_metadata_for_lambda
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.is_lambda_one_click_pg_created_during_execution is True
+
+    def test_create_pg_not_invoked_in_non_lambda_case(self):
+        self.client_stubber.add_client_error('configure_agent',
+                                             service_error_code='ResourceNotFoundException',
+                                             service_message='Simulated ResourceNotFoundException in '
+                                                             'configure_agent call')
+
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.is_lambda_one_click_pg_created_during_execution is False
+            try:
+                self.client_stubber.assert_no_pending_responses()
+                assert False
+            except AssertionError:
+                assert True
