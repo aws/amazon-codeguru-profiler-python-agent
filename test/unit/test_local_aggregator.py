@@ -5,7 +5,7 @@ from datetime import timedelta
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
-from mock import MagicMock, call
+from mock import MagicMock, call, patch
 
 from codeguru_profiler_agent.profiler import DEFAULT_REPORTING_INTERVAL, \
     DEFAULT_MEMORY_LIMIT_BYTES, Profiler, INITIAL_MINIMUM_REPORTING_INTERVAL, DEFAULT_SAMPLING_INTERVAL
@@ -42,6 +42,7 @@ class TestLocalAggregator:
 
     def before(self):
         self.mock_reporter = MagicMock(name="reporter", spec=SdkReporter)
+        self.mock_reporter.lambda_one_click_pg_created_during_execution = False
         self.mock_profile = MagicMock(name="profile", spec=Profile)
         self.mock_profile_factory = MagicMock(
             name="profile_factory",

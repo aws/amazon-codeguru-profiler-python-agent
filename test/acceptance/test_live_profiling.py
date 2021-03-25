@@ -4,6 +4,7 @@ from datetime import timedelta
 from mock import patch
 
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
+from codeguru_profiler_agent.sdk_reporter.sdk_reporter import SdkReporter
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata, DefaultFleetInfo
 from test.help_utils import DUMMY_TEST_PROFILING_GROUP_NAME
@@ -15,6 +16,9 @@ class TestLiveProfiling:
         with \
                 patch(
                     "codeguru_profiler_agent.reporter.agent_configuration.AgentConfiguration.is_under_min_reporting_time",
+                    return_value=False), \
+                patch(
+                    "codeguru_profiler_agent.sdk_reporter.sdk_reporter.SdkReporter.check_create_pg_called_during_submit_profile",
                     return_value=False), \
                 patch(
                     "codeguru_profiler_agent.reporter.agent_configuration.AgentConfiguration._is_reporting_interval_smaller_than_minimum_allowed",
