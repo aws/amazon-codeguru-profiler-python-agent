@@ -34,7 +34,6 @@ class SdkReporter(Reporter):
         self.metadata = environment["agent_metadata"]
         self.agent_config_merger = environment["agent_config_merger"]
         self.is_lambda_one_click_pg_created_during_execution = False
-        # self.is_create_pg_called_during_submit_profile = False
 
     def _encode_profile(self, profile):
         output_profile_stream = io.BytesIO()
@@ -103,8 +102,8 @@ class SdkReporter(Reporter):
                 if self.is_lambda_one_click_integration_active():
                     global is_create_pg_called_during_submit_profile
                     is_create_pg_called_during_submit_profile = True
+                    logger.info("Received ResourceNotFoundException. Attempting to create 1-click PG in Report Profile")
                     self.create_pg_when_one_click_integration_is_active()
-            self._log_request_failed(operation="post_agent_profile", exception=error)
             return False
         except Exception as e:
             self._log_request_failed(operation="post_agent_profile", exception=e)
