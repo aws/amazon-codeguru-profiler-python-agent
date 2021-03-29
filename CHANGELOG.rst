@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.0.6 (layer_v5)
+===================
+* Use IMDSv2 instead of v1 when calling EC2 Instance Metadata.
+
 1.0.5 (layer_v5)
 ===================
 * Improve CPU usage checker and ProfilerDisabler (Issue #19)
