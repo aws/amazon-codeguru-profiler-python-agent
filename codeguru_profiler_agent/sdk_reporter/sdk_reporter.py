@@ -54,6 +54,11 @@ class SdkReporter(Reporter):
     def refresh_configuration(self):
         """
         Refresh the agent configuration by calling the profiler backend service.
+
+        Note:
+        For an agent running on AWS Lambda, if the environment variables for Profiling using
+        Lambda layers are set, it tries to create a Profiling Group whenever a ResourceNotFoundException
+        is encountered.
         """
         try:
             fleet_instance_id = self.metadata.fleet_info.get_fleet_instance_id()
@@ -91,6 +96,11 @@ class SdkReporter(Reporter):
 
         :param profile: Profile to be encoded and reported to the profiler backend service.
         :return: True if profile gets reported successfully; False otherwise.
+
+        Note:
+        For an agent running on AWS Lambda, if the environment variables for Profiling using
+        Lambda layers are set, it tries to create a Profiling Group whenever a ResourceNotFoundException
+        is encountered.
         """
         global is_create_pg_called_during_submit_profile
         try:
