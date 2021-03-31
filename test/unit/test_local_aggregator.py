@@ -42,7 +42,7 @@ class TestLocalAggregator:
 
     def before(self):
         self.mock_reporter = MagicMock(name="reporter", spec=SdkReporter)
-        self.mock_reporter.lambda_one_click_pg_created_during_execution = False
+        self.mock_reporter.is_profiling_group_created_during_execution = False
         self.mock_profile = MagicMock(name="profile", spec=Profile)
         self.mock_profile_factory = MagicMock(
             name="profile_factory",

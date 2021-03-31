@@ -1,9 +1,8 @@
 import os
 import logging
 from codeguru_profiler_agent.aws_lambda.profiler_decorator import with_lambda_profiler
-
+from codeguru_profiler_agent.agent_metadata.aws_lambda import HANDLER_ENV_NAME_FOR_CODEGURU_KEY
 HANDLER_ENV_NAME = "_HANDLER"
-HANDLER_ENV_NAME_FOR_CODEGURU = "HANDLER_ENV_NAME_FOR_CODEGURU"
 logger = logging.getLogger(__name__)
 
 
@@ -11,11 +10,11 @@ def restore_handler_env(original_handler, env=os.environ):
     env[HANDLER_ENV_NAME] = original_handler
 
 
-def load_handler(bootstrap_module, env=os.environ, original_handler_env_key=HANDLER_ENV_NAME_FOR_CODEGURU):
+def load_handler(bootstrap_module, env=os.environ, original_handler_env_key=HANDLER_ENV_NAME_FOR_CODEGURU_KEY):
     try:
         original_handler_name = env.get(original_handler_env_key)
         if not original_handler_name:
-            raise ValueError("Could not find module and function name from " + HANDLER_ENV_NAME_FOR_CODEGURU
+            raise ValueError("Could not find module and function name from " + HANDLER_ENV_NAME_FOR_CODEGURU_KEY
                              + " environment variable")
 
         # Delegate to the lambda code to load the customer's module.

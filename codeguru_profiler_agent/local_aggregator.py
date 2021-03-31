@@ -101,7 +101,7 @@ class LocalAggregator:
         self.reporter.refresh_configuration()
 
     def _report_profile(self, now):
-        current_last_report_attempted_value = self.last_report_attempted
+        previous_last_report_attempted_value = self.last_report_attempted
         self.last_report_attempted = now
         self._add_overhead_metric_to_profile()
         logger.info("Attempting to report profile data: " + str(self.profile))
@@ -110,13 +110,13 @@ class LocalAggregator:
             return False
         is_reporting_successful = self.reporter.report(self.profile)
         '''
-        If we attempt to create a PG in the report() call, we do not want to update the last_report_attempted_value
+        If we attempt to create a Profiling Group in the report() call, we do not want to update the last_report_attempted_value
         since we did not actually report a profile.
 
-        This will occur only in the case of Lambda 1-click integration.
+        This will occur only in the case of profiling using CodeGuru Profiler Python agent Lambda layer.
         '''
         if SdkReporter.check_create_pg_called_during_submit_profile == True:
-            self.last_report_attempted = current_last_report_attempted_value
+            self.last_report_attempted = previous_last_report_attempted_value
             SdkReporter.reset_check_create_pg_called_during_submit_profile_flag()
         return is_reporting_successful
 

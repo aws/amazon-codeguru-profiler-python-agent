@@ -9,9 +9,10 @@ from codeguru_profiler_agent.utils.log_exception import log_exception
 from codeguru_profiler_agent.reporter.reporter import Reporter
 from codeguru_profiler_agent.metrics.with_timer import with_timer
 from codeguru_profiler_agent.sdk_reporter.profile_encoder import ProfileEncoder
+from codeguru_profiler_agent.agent_metadata.aws_lambda import HANDLER_ENV_NAME_FOR_CODEGURU_KEY, \
+    LAMBDA_TASK_ROOT, LAMBDA_RUNTIME_DIR
 
 logger = logging.getLogger(__name__)
-HANDLER_ENV_NAME_FOR_CODEGURU_KEY = "HANDLER_ENV_NAME_FOR_CODEGURU"
 AWS_EXECUTION_ENV_KEY = "AWS_EXECUTION_ENV"
 
 class SdkReporter(Reporter):
@@ -78,11 +79,12 @@ class SdkReporter(Reporter):
             if error.response['Error']['Code'] == 'ValidationException':
                 self.agent_config_merger.disable_profiling()
                 self._log_request_failed(operation="configure_agent", exception=error)
-
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.should_autocreate_profiling_group():
-                    logger.info("ResourceNotFoundException for a Lambda PG in ConfigureAgent call. "+
-                                "Attempting to create PG")
+                if self.is_compute_platform_lambda():
+                    logger.info(
+                        "Profiling group not found. Will try to create a profiling group"
+                        "with name = {} and compute platform = {} and retry calling configure agent after 5 minutes"
+                        .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
                 else:
                     self.agent_config_merger.disable_profiling()
@@ -102,7 +104,6 @@ class SdkReporter(Reporter):
         Lambda layers are set, it tries to create a Profiling Group whenever a ResourceNotFoundException
         is encountered.
         """
-        global is_create_pg_called_during_submit_profile
         try:
             profile_stream = self._encode_profile(profile)
             self.codeguru_client_builder.codeguru_client.post_agent_profile(
@@ -114,10 +115,11 @@ class SdkReporter(Reporter):
             return True
         except ClientError as error:
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.should_autocreate_profiling_group():
-                    is_create_pg_called_during_submit_profile = True
-                    logger.info("ResourceNotFoundException for a Lambda PG in PostAgentProfile call. " +
-                                "Attempting to create PG")
+                if self.is_compute_platform_lambda():
+                    self.__class__.is_create_pg_called_during_submit_profile = True
+                    logger.info(
+                        "Profiling group not found. Will try to create a profiling group"
+                        "with name = {} and compute platform = {}".format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
             return False
         except Exception as e:
@@ -127,7 +129,7 @@ class SdkReporter(Reporter):
     @with_timer("createProfilingGroup", measurement="wall-clock-time")
     def create_profiling_group(self):
         """
-        Create a PG for the Lambda function onboarded with 1-click integration
+        Create a Profiling Group for the AWS Lambda function.
         """
         try:
             self.codeguru_client_builder.codeguru_client.create_profiling_group(
@@ -136,31 +138,20 @@ class SdkReporter(Reporter):
             )
             self.is_profiling_group_created_during_execution = True
             logger.info("Created Lambda Profiling Group with name " + str(self.profiling_group_name))
+        except ClientError as error:
+            if error.response['Error']['Code'] == 'ConflictException':
+                logger.info("Profiling Group with name {} already exists. Please use a different name."
+                            .format(self.profiling_group_name))
         except Exception as e:
             self._log_request_failed(operation="create_profiling_group", exception=e)
 
-    def should_autocreate_profiling_group(self):
-        return self.is_runtime_python() and self.is_handler_name_env_variable_set()
-
-    def is_handler_name_env_variable_set(self):
+    def is_compute_platform_lambda(self):
         """
-        Check if the ComputeType is AWSLambda and if the environment
-        variables for Lambda Layer Profiling are set
+        Check if the compute platform is AWS Lambda.
         """
-        handler_name_ = os.environ.get(HANDLER_ENV_NAME_FOR_CODEGURU_KEY)
-        if not handler_name_:
-            logger.info("Env Variables for CodeGuru Profiler Lambda Layer are not set. Cannot create Profiling Group.")
-            return False
-        return True
-
-    def is_runtime_python(self):
-        """
-        Check if the runtime for the AWS Lambda function is Python
-        """
-        # https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
-        python_runtime_identifier_prefix = "python"
-        execution_environment_env_variable = os.environ.get(AWS_EXECUTION_ENV_KEY)
-        return execution_environment_env_variable.find(python_runtime_identifier_prefix) != -1
+        does_lambda_task_root_exist = os.environ.get(LAMBDA_TASK_ROOT)
+        does_lambda_runtime_dir_exist = os.environ.get(LAMBDA_RUNTIME_DIR)
+        return bool(does_lambda_task_root_exist) and bool(does_lambda_runtime_dir_exist)
 
     @staticmethod
     def _log_request_failed(operation, exception):

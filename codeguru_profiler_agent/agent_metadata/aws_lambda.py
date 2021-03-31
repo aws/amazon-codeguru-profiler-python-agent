@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 LAMBDA_MEMORY_SIZE_ENV = "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
 LAMBDA_EXECUTION_ENV = "AWS_EXECUTION_ENV"
+HANDLER_ENV_NAME_FOR_CODEGURU_KEY = "HANDLER_ENV_NAME_FOR_CODEGURU"
+LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT"
+LAMBDA_RUNTIME_DIR = "LAMBDA_RUNTIME_DIR"
 
 # Those are used for the configure agent call:
 # See https://docs.aws.amazon.com/codeguru/latest/profiler-api/API_ConfigureAgent.html
