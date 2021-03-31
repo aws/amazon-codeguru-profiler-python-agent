@@ -1,7 +1,7 @@
 import pytest
 import codeguru_profiler_agent.aws_lambda.profiler_decorator
 
-from mock import MagicMock, patch
+from unittest.mock import MagicMock
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent import with_lambda_profiler
 from codeguru_profiler_agent import Profiler
@@ -71,7 +71,7 @@ class TestWithParameters:
         self.context = MagicMock()
         self.context.invoked_function_arn = "the_lambda_function_arn"
         self.env = {"AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "1024",
-                    "AWS_EXECUTION_ENV": "AWS_Lambda_python3.6"}
+                    "AWS_EXECUTION_ENV_KEY": "AWS_Lambda_python3.6"}
 
         # define a handler function with the profiler decorator and parameters
         @with_lambda_profiler(profiling_group_name="pg_name", region_name="eu-north-1",

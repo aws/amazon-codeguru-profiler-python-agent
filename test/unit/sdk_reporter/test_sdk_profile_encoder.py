@@ -2,7 +2,7 @@
 import platform
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata
 from codeguru_profiler_agent.agent_metadata.aws_ec2_instance import AWSEC2Instance

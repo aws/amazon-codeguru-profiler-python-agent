@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 import shutil
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 import time
 
 from codeguru_profiler_agent.model.profile import Profile

@@ -2,7 +2,7 @@ import os
 import logging
 import uuid
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 from codeguru_profiler_agent.agent_metadata.fleet_info import FleetInfo
 from codeguru_profiler_agent.aws_lambda.lambda_context import LambdaContext
 

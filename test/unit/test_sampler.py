@@ -1,6 +1,6 @@
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from test.pytestutils import before
-import mock
+import unittest.mock as mock
 from mock import create_autospec, MagicMock, ANY
 
 from codeguru_profiler_agent.sampler import Sampler

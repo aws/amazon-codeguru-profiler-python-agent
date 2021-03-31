@@ -2,7 +2,7 @@ import pytest
 
 from codeguru_profiler_agent.model.frame import Frame
 from test.pytestutils import before
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from codeguru_profiler_agent.model.call_graph_node import CallGraphNode
 from codeguru_profiler_agent.model.memory_counter import MemoryCounter

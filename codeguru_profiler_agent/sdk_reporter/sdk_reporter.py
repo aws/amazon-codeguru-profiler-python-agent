@@ -11,7 +11,8 @@ from codeguru_profiler_agent.metrics.with_timer import with_timer
 from codeguru_profiler_agent.sdk_reporter.profile_encoder import ProfileEncoder
 
 logger = logging.getLogger(__name__)
-HANDLER_ENV_NAME_FOR_CODEGURU = "HANDLER_ENV_NAME_FOR_CODEGURU"
+HANDLER_ENV_NAME_FOR_CODEGURU_KEY = "HANDLER_ENV_NAME_FOR_CODEGURU"
+AWS_EXECUTION_ENV_KEY = "AWS_EXECUTION_ENV"
 
 class SdkReporter(Reporter):
     """
@@ -33,7 +34,7 @@ class SdkReporter(Reporter):
         self.timer = environment.get("timer")
         self.metadata = environment["agent_metadata"]
         self.agent_config_merger = environment["agent_config_merger"]
-        self.is_lambda_one_click_pg_created_during_execution = False
+        self.is_profiling_group_created_during_execution = False
 
     def _encode_profile(self, profile):
         output_profile_stream = io.BytesIO()
@@ -71,12 +72,15 @@ class SdkReporter(Reporter):
             # see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
             if error.response['Error']['Code'] == 'ValidationException':
                 self.agent_config_merger.disable_profiling()
+                self._log_request_failed(operation="configure_agent", exception=error)
+
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.is_lambda_one_click_integration_active():
-                    self.create_pg_when_one_click_integration_is_active()
+                if self.should_autocreate_profiling_group():
+                    logger.info("ResourceNotFoundException for a Lambda PG in ConfigureAgent call. "+
+                                "Attempting to create PG")
+                    self.create_profiling_group()
                 else:
                     self.agent_config_merger.disable_profiling()
-            self._log_request_failed(operation="configure_agent", exception=error)
         except Exception as e:
             self._log_request_failed(operation="configure_agent", exception=e)
 
@@ -88,6 +92,7 @@ class SdkReporter(Reporter):
         :param profile: Profile to be encoded and reported to the profiler backend service.
         :return: True if profile gets reported successfully; False otherwise.
         """
+        global is_create_pg_called_during_submit_profile
         try:
             profile_stream = self._encode_profile(profile)
             self.codeguru_client_builder.codeguru_client.post_agent_profile(
@@ -99,52 +104,53 @@ class SdkReporter(Reporter):
             return True
         except ClientError as error:
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.is_lambda_one_click_integration_active():
-                    global is_create_pg_called_during_submit_profile
+                if self.should_autocreate_profiling_group():
                     is_create_pg_called_during_submit_profile = True
-                    logger.info("Received ResourceNotFoundException. Attempting to create 1-click PG in Report Profile")
-                    self.create_pg_when_one_click_integration_is_active()
+                    logger.info("ResourceNotFoundException for a Lambda PG in PostAgentProfile call. " +
+                                "Attempting to create PG")
+                    self.create_profiling_group()
             return False
         except Exception as e:
             self._log_request_failed(operation="post_agent_profile", exception=e)
             return False
 
-    @with_timer("createOneClickPG", measurement="wall-clock-time")
-    def create_pg_when_one_click_integration_is_active(self):
+    @with_timer("createProfilingGroup", measurement="wall-clock-time")
+    def create_profiling_group(self):
         """
         Create a PG for the Lambda function onboarded with 1-click integration
         """
-        function_name = str(self.metadata.fleet_info.function_arn).split(':')[6]
-
-        profiling_group_name_for_1_click = "aws-lambda-{}".format(function_name)
-        profiling_group_name_to_be_created = os.getenv("AWS_CODEGURU_PROFILER_GROUP_NAME",
-                                                       profiling_group_name_for_1_click)
         try:
             self.codeguru_client_builder.codeguru_client.create_profiling_group(
-                profilingGroupName=profiling_group_name_to_be_created,
+                profilingGroupName=self.profiling_group_name,
                 computePlatform='AWSLambda'
             )
-            self.profiling_group_name = profiling_group_name_to_be_created
-            self.is_lambda_one_click_pg_created_during_execution = True
-            logger.info("Created Lambda Profiling Group with name {}", profiling_group_name_to_be_created)
-
+            self.is_profiling_group_created_during_execution = True
+            logger.info("Created Lambda Profiling Group with name " + str(self.profiling_group_name))
         except Exception as e:
             self._log_request_failed(operation="create_profiling_group", exception=e)
 
-    def is_lambda_one_click_integration_active(self):
+    def should_autocreate_profiling_group(self):
+        return self.is_runtime_python() and self.is_handler_name_env_variable_set()
+
+    def is_handler_name_env_variable_set(self):
         """
         Check if the ComputeType is AWSLambda and if the environment
         variables for Lambda Layer Profiling are set
         """
-        fleet_info_as_map = self.metadata.fleet_info.serialize_to_map()
-        if 'computeType' in fleet_info_as_map:
-            if fleet_info_as_map['computeType'] == 'aws_lambda':
-                handler_name_ = os.environ.get(HANDLER_ENV_NAME_FOR_CODEGURU)
-                if not handler_name_:
-                    logger.error("Env Variables for CodeGuru Profiler Lambda Layer are not set. Cannot create PG.")
-                    return False
-                return True
-        return False
+        handler_name_ = os.environ.get(HANDLER_ENV_NAME_FOR_CODEGURU_KEY)
+        if not handler_name_:
+            logger.info("Env Variables for CodeGuru Profiler Lambda Layer are not set. Cannot create Profiling Group.")
+            return False
+        return True
+
+    def is_runtime_python(self):
+        """
+        Check if the runtime for the AWS Lambda function is Python
+        """
+        # https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+        python_runtime_identifier_prefix = "python"
+        execution_environment_env_variable = os.environ.get(AWS_EXECUTION_ENV_KEY)
+        return execution_environment_env_variable.find(python_runtime_identifier_prefix) != -1
 
     @staticmethod
     def _log_request_failed(operation, exception):

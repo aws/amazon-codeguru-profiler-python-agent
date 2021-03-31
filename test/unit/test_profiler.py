@@ -1,6 +1,6 @@
 import pytest
 from datetime import timedelta
-from mock import Mock
+from unittest.mock import Mock
 from codeguru_profiler_agent.profiler import Profiler
 from codeguru_profiler_agent.profiler_runner import ProfilerRunner
 

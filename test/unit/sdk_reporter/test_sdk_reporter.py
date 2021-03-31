@@ -5,10 +5,9 @@ import boto3
 
 from datetime import timedelta, datetime
 
-from codeguru_profiler_agent.agent_metadata.aws_lambda import AWSLambda
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
-from mock import MagicMock
+from unittest.mock import MagicMock
 from botocore.stub import Stubber, ANY
 
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfigurationMerger
@@ -20,11 +19,12 @@ from codeguru_profiler_agent.model.profile import Profile
 from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilder
 
 profiling_group_name = "test-ProfilingGroup-name"
-lambda_one_click_profiling_group_name = "aws-lambda-testLambdaName"
-test_agent_metadata_for_lambda = AgentMetadata(
-    fleet_info=AWSLambda("arn:aws:lambda:us-east-1:111111111111:function:testLambdaName", "memory", "env", "agentId"))
+test_lambda_profiling_group_name = "aws-lambda-testLambdaName"
 profile = Profile(profiling_group_name, 1.0, 0.5, current_milli_time())
 
+AWS_EXECUTION_ENV_KEY = "AWS_EXECUTION_ENV"
+AWS_LAMBDA_FUNCTION_MEMORY_SIZE_KEY = "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
+HANDLER_ENV_NAME_FOR_CODEGURU_KEY = "HANDLER_ENV_NAME_FOR_CODEGURU"
 
 class TestSdkReporter:
     def before(self):
@@ -83,7 +83,7 @@ class TestReport(TestSdkReporter):
         expected_params = {
             'agentProfile': ANY,
             'contentType': 'application/json',
-            'profilingGroupName': profiling_group_name
+            'profilingGroupName': test_lambda_profiling_group_name
         }
         self.client_stubber.add_client_error('post_agent_profile',
                                              service_error_code='ResourceNotFoundException',
@@ -119,13 +119,13 @@ class TestReport(TestSdkReporter):
         expected_params_one_click = {
             'agentProfile': ANY,
             'contentType': 'application/json',
-            'profilingGroupName': lambda_one_click_profiling_group_name
+            'profilingGroupName': test_lambda_profiling_group_name
         }
         self.client_stubber.add_response('post_agent_profile', {}, expected_params_one_click)
 
-        os.environ.__setitem__('AWS_CODEGURU_PROFILER_GROUP_NAME', lambda_one_click_profiling_group_name)
-        os.environ.__setitem__('HANDLER_ENV_NAME_FOR_CODEGURU', 'test-handler')
-        self.subject.metadata = test_agent_metadata_for_lambda
+        os.environ.__setitem__(HANDLER_ENV_NAME_FOR_CODEGURU_KEY, 'test-handler')
+        os.environ.__setitem__(AWS_EXECUTION_ENV_KEY, 'AWS_Lambda_python3.8')
+        self.subject.profiling_group_name = test_lambda_profiling_group_name
         with self.client_stubber:
             assert self.subject.report(profile) is False
             assert self.subject.report(profile) is True
@@ -215,12 +215,21 @@ class TestConfigureAgent(TestSdkReporter):
             assert AgentConfiguration.get().should_profile is True
             assert AgentConfiguration.get().sampling_interval == timedelta(seconds=13)
 
-    def test_when_backends_sends_resource_not_found_it_stops_the_profiling(self):
+    def test_when_backends_sends_resource_not_found_it_stops_the_profiling_in_non_lambda_case(self):
         self.client_stubber.add_client_error('configure_agent', service_error_code='ResourceNotFoundException',
                                              service_message='Simulated error in configure_agent call')
+        os.environ.__setitem__(AWS_EXECUTION_ENV_KEY, 'AWS_Lambda_java')
         with self.client_stubber:
             self.subject.refresh_configuration()
             assert AgentConfiguration.get().should_profile is False
+
+    def test_when_backends_sends_resource_not_found_it_does_not_stop_the_profiling_lambda_case(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code='ResourceNotFoundException',
+                                             service_message='Simulated error in configure_agent call')
+        os.environ.__setitem__(AWS_EXECUTION_ENV_KEY, 'AWS_Lambda_python3.8')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert AgentConfiguration.get().should_profile is True
 
     def test_when_backend_sends_validation_exception_it_stops_the_profiling(self):
         self.client_stubber.add_client_error('configure_agent', service_error_code='ValidationException',
@@ -260,14 +269,13 @@ class TestConfigureAgent(TestSdkReporter):
         }
         self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
 
-        os.environ.__setitem__('AWS_LAMBDA_FUNCTION_MEMORY_SIZE', "512")
-        os.environ.__setitem__('AWS_EXECUTION_ENV', "AWS_Lambda_python3.8")
-        os.environ.__setitem__('AWS_CODEGURU_PROFILER_GROUP_NAME', lambda_one_click_profiling_group_name)
-        os.environ.__setitem__('HANDLER_ENV_NAME_FOR_CODEGURU', 'test-handler')
-        self.subject.metadata = test_agent_metadata_for_lambda
+        os.environ.__setitem__(AWS_LAMBDA_FUNCTION_MEMORY_SIZE_KEY, "512")
+        os.environ.__setitem__(AWS_EXECUTION_ENV_KEY, "AWS_Lambda_python3.8")
+        os.environ.__setitem__(HANDLER_ENV_NAME_FOR_CODEGURU_KEY, 'test-handler')
+        self.subject.profiling_group_name = test_lambda_profiling_group_name
         with self.client_stubber:
             self.subject.refresh_configuration()
-            assert self.subject.is_lambda_one_click_pg_created_during_execution is True
+            assert self.subject.is_profiling_group_created_during_execution is True
 
     def test_create_pg_not_invoked_in_non_lambda_case(self):
         self.client_stubber.add_client_error('configure_agent',
@@ -277,9 +285,5 @@ class TestConfigureAgent(TestSdkReporter):
 
         with self.client_stubber:
             self.subject.refresh_configuration()
-            assert self.subject.is_lambda_one_click_pg_created_during_execution is False
-            try:
-                self.client_stubber.assert_no_pending_responses()
-                assert False
-            except AssertionError:
-                assert True
+            assert self.subject.is_profiling_group_created_during_execution is False
+            assert self.client_stubber.assert_no_pending_responses() is None

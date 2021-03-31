@@ -1,5 +1,5 @@
 import pytest
-from mock import Mock
+from unittest.mock import Mock
 
 from codeguru_profiler_agent.model.frame import Frame
 from test.pytestutils import before

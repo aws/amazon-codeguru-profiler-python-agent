@@ -5,7 +5,7 @@ from datetime import timedelta
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
-from mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call
 
 from codeguru_profiler_agent.profiler import DEFAULT_REPORTING_INTERVAL, \
     DEFAULT_MEMORY_LIMIT_BYTES, Profiler, INITIAL_MINIMUM_REPORTING_INTERVAL, DEFAULT_SAMPLING_INTERVAL

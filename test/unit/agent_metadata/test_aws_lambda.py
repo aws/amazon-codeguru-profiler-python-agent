@@ -1,6 +1,6 @@
 import pytest
 from test.pytestutils import before
-from mock import Mock
+from unittest.mock import Mock
 from datetime import timedelta
 from codeguru_profiler_agent.agent_metadata.aws_lambda import AWSLambda
 from codeguru_profiler_agent.aws_lambda.lambda_context import LambdaContext

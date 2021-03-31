@@ -1,7 +1,7 @@
 import time
 
 from datetime import timedelta
-from mock import patch
+from unittest.mock import patch
 
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.sdk_reporter.sdk_reporter import SdkReporter

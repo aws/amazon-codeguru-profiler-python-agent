@@ -2,7 +2,7 @@ from datetime import timedelta
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from test.pytestutils import before
 from test.help_utils import wait_for
-from mock import MagicMock
+from unittest.mock import MagicMock
 from time import sleep
 
 from codeguru_profiler_agent.profiler_runner import ProfilerRunner

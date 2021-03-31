@@ -2,7 +2,7 @@ import os
 
 import boto3
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from test.pytestutils import before
 from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilder
