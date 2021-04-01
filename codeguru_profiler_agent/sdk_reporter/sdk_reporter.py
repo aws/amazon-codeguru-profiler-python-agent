@@ -35,7 +35,6 @@ class SdkReporter(Reporter):
         self.timer = environment.get("timer")
         self.metadata = environment["agent_metadata"]
         self.agent_config_merger = environment["agent_config_merger"]
-        self.is_profiling_group_created_during_execution = False
 
     def _encode_profile(self, profile):
         output_profile_stream = io.BytesIO()
@@ -80,9 +79,9 @@ class SdkReporter(Reporter):
                 self.agent_config_merger.disable_profiling()
                 self._log_request_failed(operation="configure_agent", exception=error)
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.is_compute_platform_lambda():
+                if self.should_auto_create_profiling_group():
                     logger.info(
-                        "Profiling group not found. Will try to create a profiling group"
+                        "Profiling group not found. Will try to create a profiling group "
                         "with name = {} and compute platform = {} and retry calling configure agent after 5 minutes"
                         .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
@@ -115,10 +114,10 @@ class SdkReporter(Reporter):
             return True
         except ClientError as error:
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
-                if self.is_compute_platform_lambda():
+                if self.should_auto_create_profiling_group():
                     self.__class__.is_create_pg_called_during_submit_profile = True
                     logger.info(
-                        "Profiling group not found. Will try to create a profiling group"
+                        "Profiling group not found. Will try to create a profiling group "
                         "with name = {} and compute platform = {}".format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
             return False
@@ -136,7 +135,6 @@ class SdkReporter(Reporter):
                 profilingGroupName=self.profiling_group_name,
                 computePlatform='AWSLambda'
             )
-            self.is_profiling_group_created_during_execution = True
             logger.info("Created Lambda Profiling Group with name " + str(self.profiling_group_name))
         except ClientError as error:
             if error.response['Error']['Code'] == 'ConflictException':
@@ -144,6 +142,13 @@ class SdkReporter(Reporter):
                             .format(self.profiling_group_name))
         except Exception as e:
             self._log_request_failed(operation="create_profiling_group", exception=e)
+
+    def should_auto_create_profiling_group(self):
+        """
+        Currently the only condition we check is to verify that the Compute Platform is AWS Lambda.
+        In future, other checks could be places inside this method.
+        """
+        return self.is_compute_platform_lambda()
 
     def is_compute_platform_lambda(self):
         """

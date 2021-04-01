@@ -245,7 +245,7 @@ class TestConfigureAgent(TestSdkReporter):
         self.subject.profiling_group_name = autocreated_test_lambda_profiling_group_name
         with self.client_stubber:
             self.subject.refresh_configuration()
-            assert self.subject.is_profiling_group_created_during_execution is True
+            self.client_stubber.assert_no_pending_responses()
 
     def test_create_pg_not_invoked_in_non_lambda_case(self):
         self.client_stubber.add_client_error('configure_agent',
@@ -255,5 +255,4 @@ class TestConfigureAgent(TestSdkReporter):
 
         with self.client_stubber:
             self.subject.refresh_configuration()
-            assert self.subject.is_profiling_group_created_during_execution is False
             self.client_stubber.assert_no_pending_responses()
