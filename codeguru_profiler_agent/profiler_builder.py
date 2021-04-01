@@ -17,6 +17,9 @@ REGION_ENV = "AWS_CODEGURU_PROFILER_TARGET_REGION"
 CREDENTIAL_PATH = "AWS_CODEGURU_PROFILER_CREDENTIAL_PATH"
 ENABLED_ENV = "AWS_CODEGURU_PROFILER_ENABLED"
 
+# Environment variables provided by AWS Lambda
+AWS_LAMBDA_FUNCTION_NAME_ENV_VAR_KEY = "AWS_LAMBDA_FUNCTION_NAME"
+
 # non documented parameters
 SAMPLING_INTERVAL = "AWS_CODEGURU_PROFILER_SAMPLING_INTERVAL_MS"
 REPORTING_INTERVAL = "AWS_CODEGURU_PROFILER_REPORTING_INTERVAL_MS"
@@ -111,7 +114,8 @@ def _check_credential_through_environment(env=os.environ):
 
 
 def build_profiler(pg_name=None, region_name=None, credential_profile=None,
-                   env=os.environ, session_factory=boto3.session.Session, profiler_factory=None, override=None):
+                   env=os.environ, session_factory=boto3.session.Session, profiler_factory=None, override=None,
+                   should_autocreate_profiling_group=False):
     """
     Creates a Profiler object from given parameters or environment variables
     :param pg_name: given profiling group name, default is None
@@ -120,6 +124,7 @@ def build_profiler(pg_name=None, region_name=None, credential_profile=None,
     :param env: environment variables are used if parameters are not provided, default is os.environ
     :param session_factory: (For testing) function for creating boto3.session.Session, default is boto3.session.Session
     :param override: a dictionary with possible extra parameters to override default values
+    :param should_autocreate_profiling_group: True when Compute Platform is AWS Lambda. False otherwise
     :return: a Profiler object or None, this function does not throw exceptions
     """
     if profiler_factory is None:
@@ -137,9 +142,12 @@ def build_profiler(pg_name=None, region_name=None, credential_profile=None,
         name_from_arn, region_from_arn, _account_id = _read_profiling_group_arn(env)
         profiling_group_name = _get_profiling_group_name(pg_name, name_from_arn, env)
         if not profiling_group_name:
-            logger.info("Could not find a profiling group name to start the CodeGuru Profiler agent. "
-                        + "Add command line argument or environment variable. e.g. " + PG_ARN_ENV)
-            return None
+            if should_autocreate_profiling_group:
+                profiling_group_name = "aws-lambda-" + env.get(AWS_LAMBDA_FUNCTION_NAME_ENV_VAR_KEY)
+            else:
+                logger.info("Could not find a profiling group name to start the CodeGuru Profiler agent. "
+                            + "Add command line argument or environment variable. e.g. " + PG_ARN_ENV)
+                return None
         region = _get_region(region_name, region_from_arn, env)
         session = session_factory(region_name=region, profile_name=credential_profile)
 

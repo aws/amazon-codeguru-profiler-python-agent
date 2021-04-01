@@ -5,7 +5,7 @@ import tempfile
 import os
 
 from datetime import timedelta
-from mock import patch
+from unittest.mock import patch
 from pathlib import Path
 
 from codeguru_profiler_agent.profiler import Profiler

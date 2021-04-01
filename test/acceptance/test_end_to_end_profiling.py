@@ -1,6 +1,6 @@
 from botocore.stub import Stubber, ANY
 from datetime import timedelta
-from mock import patch
+from unittest.mock import patch
 from test.pytestutils import before
 
 from codeguru_profiler_agent.profiler import Profiler
@@ -33,6 +33,9 @@ class TestEndToEndProfiling:
         with \
                 patch(
                     "codeguru_profiler_agent.reporter.agent_configuration.AgentConfiguration.is_under_min_reporting_time",
+                    return_value=False), \
+                patch(
+                    "codeguru_profiler_agent.sdk_reporter.sdk_reporter.SdkReporter.check_create_pg_called_during_submit_profile",
                     return_value=False):
             with self.client_stubber:
                 self.profiler.start()

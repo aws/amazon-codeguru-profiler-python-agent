@@ -1,5 +1,5 @@
 import pytest
-from mock import mock
+import unittest.mock as mock
 import sys
 
 from test import help_utils

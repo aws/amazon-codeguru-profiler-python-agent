@@ -2,8 +2,8 @@ import tempfile
 import pytest
 import shutil
 
-from mock import MagicMock
-from mock import ANY
+from unittest.mock import MagicMock
+from unittest.mock import ANY
 from pathlib import Path
 
 from codeguru_profiler_agent.file_reporter.file_reporter import FileReporter

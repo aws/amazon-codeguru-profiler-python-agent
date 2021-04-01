@@ -15,7 +15,8 @@ def _create_lambda_profiler(profiling_group_name, region_name, environment_overr
     from codeguru_profiler_agent.agent_metadata.aws_lambda import AWSLambda
     override = {'agent_metadata': AgentMetadata(AWSLambda.look_up_metadata(context))}
     override.update(environment_override)
-    profiler = build_profiler(pg_name=profiling_group_name, region_name=region_name, override=override, env=env)
+    profiler = build_profiler(pg_name=profiling_group_name, region_name=region_name, override=override, env=env,
+                              should_autocreate_profiling_group=True)
     if profiler is None:
         return _EmptyProfiler()
     return profiler

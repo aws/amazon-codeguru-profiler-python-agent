@@ -3,7 +3,7 @@ import time
 import datetime
 from test.pytestutils import before
 from queue import Queue, Empty
-from mock import MagicMock, call
+from unittest.mock import MagicMock, call
 
 from codeguru_profiler_agent.utils.execution_state import ExecutionState
 

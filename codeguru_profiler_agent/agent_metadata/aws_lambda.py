@@ -2,6 +2,7 @@ import os
 import logging
 import uuid
 
+from unittest.mock import MagicMock
 from codeguru_profiler_agent.agent_metadata.fleet_info import FleetInfo
 from codeguru_profiler_agent.aws_lambda.lambda_context import LambdaContext
 
@@ -9,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 LAMBDA_MEMORY_SIZE_ENV = "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
 LAMBDA_EXECUTION_ENV = "AWS_EXECUTION_ENV"
+HANDLER_ENV_NAME_FOR_CODEGURU_KEY = "HANDLER_ENV_NAME_FOR_CODEGURU"
+LAMBDA_TASK_ROOT = "LAMBDA_TASK_ROOT"
+LAMBDA_RUNTIME_DIR = "LAMBDA_RUNTIME_DIR"
 
 # Those are used for the configure agent call:
 # See https://docs.aws.amazon.com/codeguru/latest/profiler-api/API_ConfigureAgent.html
@@ -100,7 +104,12 @@ class AWSLambda(FleetInfo):
             as_map[LAMBDA_MEMORY_LIMIT_IN_MB_KEY] = str(self.memory_limit_mb)
         if self.execution_env:
             as_map[EXECUTION_ENVIRONMENT_KEY] = self.execution_env
-        if lambda_context.context is not None:
+
+        '''
+        Adding a specific condition to ignore MagicMock instances from being added to the metadata since
+        it causes boto to raise a ParamValidationError, similar to https://github.com/boto/botocore/issues/2063.
+        '''
+        if lambda_context.context is not None and not isinstance(lambda_context.context, MagicMock):
             as_map[AWS_REQUEST_ID_KEY] = lambda_context.context.aws_request_id
             as_map[LAMBDA_REMAINING_TIME_IN_MILLISECONDS_KEY] = \
                 str(lambda_context.context.get_remaining_time_in_millis())
