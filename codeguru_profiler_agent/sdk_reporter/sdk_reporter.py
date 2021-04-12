@@ -82,7 +82,8 @@ class SdkReporter(Reporter):
                 if self.should_auto_create_profiling_group():
                     logger.info(
                         "Profiling group not found. Will try to create a profiling group "
-                        "with name = {} and compute platform = {} and retry calling configure agent after 5 minutes"
+                        "with name = {} and compute platform = {} and retry calling configure agent after 5 minutes. "
+                        "Make sure that Lambda's execution role has AmazonCodeGuruProfilerAgentAccess policy added."
                         .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
                 else:
@@ -118,7 +119,9 @@ class SdkReporter(Reporter):
                     self.__class__.is_create_pg_called_during_submit_profile = True
                     logger.info(
                         "Profiling group not found. Will try to create a profiling group "
-                        "with name = {} and compute platform = {}".format(self.profiling_group_name, 'AWSLambda'))
+                        "with name = {} and compute platform = {} and retry reporting during next invocation. "
+                        "Make sure that Lambda's execution role has AmazonCodeGuruProfilerAgentAccess policy added."
+                        .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
             return False
         except Exception as e:
