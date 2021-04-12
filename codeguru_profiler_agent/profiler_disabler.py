@@ -58,6 +58,7 @@ class CpuUsageCheck:
 
         if used_time_percentage >= cpu_limit_percentage:
             logger.debug(self.timer.metrics)
+            logger.debug("Profile active seconds since start: {:.2f} s".format(profile.get_active_millis_since_start()/1000))
             logger.info(
                 "Profiler overall cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler."
                 .format(used_time_percentage, cpu_limit_percentage))
@@ -78,6 +79,7 @@ class CpuUsageCheck:
 
         if used_time_percentage >= cpu_limit_percentage:
             logger.debug(self.timer.metrics)
+            logger.debug("Sampling interval seconds: {:.2f} s".format(sampling_interval_seconds))
             logger.info(
                 "Profiler sampling cpu usage limit reached: {:.2f} % (limit: {:.2f} %), will stop CodeGuru Profiler."
                 .format(used_time_percentage, cpu_limit_percentage))
