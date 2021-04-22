@@ -15,12 +15,14 @@ from codeguru_profiler_agent.agent_metadata.aws_lambda import HANDLER_ENV_NAME_F
 logger = logging.getLogger(__name__)
 AWS_EXECUTION_ENV_KEY = "AWS_EXECUTION_ENV"
 
+
 class SdkReporter(Reporter):
     """
     Handles communication with the CodeGuru Profiler Service backend.
     Encodes profiles using the ProfilerEncoder and reports them using the CodeGuru profiler SDK.
     """
     is_create_pg_called_during_submit_profile = False
+
     def __init__(self, environment):
         """
         :param environment: dependency container dictionary for the current profiler.
@@ -35,6 +37,7 @@ class SdkReporter(Reporter):
         self.timer = environment.get("timer")
         self.metadata = environment["agent_metadata"]
         self.agent_config_merger = environment["agent_config_merger"]
+        self.errors_metadata = environment["errors_metadata"]
 
     def _encode_profile(self, profile):
         output_profile_stream = io.BytesIO()
@@ -76,10 +79,12 @@ class SdkReporter(Reporter):
             # We handle service exceptions like this in boto3
             # see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
             if error.response['Error']['Code'] == 'ValidationException':
+                self.errors_metadata.record_sdk_error("configureAgentErrors")
                 self.agent_config_merger.disable_profiling()
                 self._log_request_failed(operation="configure_agent", exception=error)
-            if error.response['Error']['Code'] == 'ResourceNotFoundException':
+            elif error.response['Error']['Code'] == 'ResourceNotFoundException':
                 if self.should_auto_create_profiling_group():
+                    self.errors_metadata.record_sdk_error("configureAgentRnfeAutoCreateEnabledErrors")
                     logger.info(
                         "Profiling group not found. Will try to create a profiling group "
                         "with name = {} and compute platform = {} and retry calling configure agent after 5 minutes. "
@@ -87,7 +92,10 @@ class SdkReporter(Reporter):
                         .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
                 else:
+                    self.errors_metadata.record_sdk_error("configureAgentErrors")
                     self.agent_config_merger.disable_profiling()
+            else:
+                self.errors_metadata.record_sdk_error("configureAgentErrors")
         except Exception as e:
             self._log_request_failed(operation="configure_agent", exception=e)
 
@@ -117,12 +125,17 @@ class SdkReporter(Reporter):
             if error.response['Error']['Code'] == 'ResourceNotFoundException':
                 if self.should_auto_create_profiling_group():
                     self.__class__.is_create_pg_called_during_submit_profile = True
+                    self.errors_metadata.record_sdk_error("postAgentProfileRnfeAutoCreateEnabledErrors")
                     logger.info(
                         "Profiling group not found. Will try to create a profiling group "
                         "with name = {} and compute platform = {} and retry reporting during next invocation. "
                         "Make sure that Lambda's execution role has AmazonCodeGuruProfilerAgentAccess policy added."
                         .format(self.profiling_group_name, 'AWSLambda'))
                     self.create_profiling_group()
+                else:
+                    self.errors_metadata.record_sdk_error("postAgentProfileErrors")
+            else:
+                self.errors_metadata.record_sdk_error("postAgentProfileErrors")
             return False
         except Exception as e:
             self._log_request_failed(operation="post_agent_profile", exception=e)
@@ -143,6 +156,8 @@ class SdkReporter(Reporter):
             if error.response['Error']['Code'] == 'ConflictException':
                 logger.info("Profiling Group with name {} already exists. Please use a different name."
                             .format(self.profiling_group_name))
+            else:
+                self.errors_metadata.record_sdk_error("createProfilingGroupErrors")
         except Exception as e:
             self._log_request_failed(operation="create_profiling_group", exception=e)
 

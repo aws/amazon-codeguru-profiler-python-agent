@@ -11,7 +11,7 @@ ROOT_NODE_NAME = "ALL"
 
 
 class Profile:
-    def __init__(self, profiling_group_name, sampling_interval_seconds, host_weight, start, clock=time.time):
+    def __init__(self, profiling_group_name, sampling_interval_seconds, host_weight, start, agent_debug_info, clock=time.time):
         """
         A profile holds the root node of the call graph and the metadata related to the profile
         """
@@ -35,6 +35,7 @@ class Profile:
         self.host_weight = int(host_weight)
         self._start_process_time = time.process_time()  # provides process time in fractional seconds as float.
         self.overhead_ms = 0
+        self.agent_debug_info = agent_debug_info
 
     @property
     def end(self):
@@ -96,6 +97,9 @@ class Profile:
 
     def get_memory_usage_bytes(self):
         return self.memory_counter.get_memory_usage_bytes()
+
+    def serialize_agent_debug_info_to_json(self):
+        return self.agent_debug_info.serialize_to_json()
 
     def pause(self):
         if self.last_pause is not None:

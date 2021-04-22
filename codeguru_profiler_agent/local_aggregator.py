@@ -2,6 +2,7 @@ import logging
 import time
 import datetime
 
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import AgentDebugInfo
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.metrics.with_timer import with_timer
 from codeguru_profiler_agent.model.profile import Profile
@@ -30,6 +31,7 @@ class LocalAggregator:
         :param host_weight: (required inside environment) scale factor used to rescale the profile collected in this
             host to make the profile representative of the whole fleet
         :param timer: (required inside environment) timer to be used for metrics
+        :param errors_metadata: (required inside environment) metadata capturing errors in the current profile.
         :param profile_factory: (inside environment) the factory to created profiler; default Profile.
         :param clock: (inside environment) clock to be used; default is time.time
         """
@@ -37,6 +39,7 @@ class LocalAggregator:
         self.profiling_group_name = environment["profiling_group_name"]
         self.host_weight = environment["host_weight"]
         self.timer = environment["timer"]
+        self.errors_metadata = environment["errors_metadata"]
 
         self.profile_factory = environment.get("profile_factory") or Profile
         self.clock = environment.get("clock") or time.time
@@ -71,11 +74,13 @@ class LocalAggregator:
             self.flush(force=True)
 
     def reset(self):
+        self.errors_metadata.reset()
         self.profile = self.profile_factory(
             profiling_group_name=self.profiling_group_name,
             sampling_interval_seconds=AgentConfiguration.get().sampling_interval.total_seconds(),
             host_weight=self.host_weight,
             start=current_milli_time(clock=self.clock),
+            agent_debug_info=AgentDebugInfo(self.errors_metadata),
             clock=self.clock
         )
         self.timer.reset()

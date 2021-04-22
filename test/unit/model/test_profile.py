@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import Mock
 
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import AgentDebugInfo, ErrorsMetadata
 from codeguru_profiler_agent.model.frame import Frame
 from test.pytestutils import before
 import datetime
@@ -19,6 +20,7 @@ class TestProfile:
             sampling_interval_seconds=1.0,
             host_weight=2,
             start=self.test_start_time,
+            agent_debug_info=AgentDebugInfo(ErrorsMetadata()),
             clock=self.mock_clock
         )
 
@@ -292,11 +294,14 @@ class TestStartTime(TestProfile):
 
     def test_it_raise_exception_for_invalid_start_time(self):
         with pytest.raises(ValueError):
-            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=0)
+            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=0,
+                    agent_debug_info=AgentDebugInfo(ErrorsMetadata))
         with pytest.raises(ValueError):
-            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=-100)
+            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=-100,
+                    agent_debug_info=AgentDebugInfo(ErrorsMetadata))
         with pytest.raises(TypeError):
-            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=None)
+            Profile(profiling_group_name="foo", sampling_interval_seconds=1.0, host_weight=2, start=None,
+                    agent_debug_info=AgentDebugInfo(ErrorsMetadata))
 
 
 class TestEndTime(TestProfile):

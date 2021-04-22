@@ -5,6 +5,7 @@ import time
 
 from datetime import timedelta
 
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import ErrorsMetadata, AgentDebugInfo
 from test.help_utils import MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS
 from test.pytestutils import before
 
@@ -32,8 +33,10 @@ class TestLiveBackendReporting:
             stacks=[[Frame(MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS)]],
             attempted_sample_threads_count=1,
             seen_threads_count=1)
+        errors_metadata = ErrorsMetadata()
 
-        self.profile = Profile(MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS, 1.0, 1.0, five_minutes_ago_millis)
+        self.profile = Profile(MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS, 1.0, 1.0, five_minutes_ago_millis,
+                               AgentDebugInfo(errors_metadata))
         # FIXME: Remove adding the end time manually below after feature fully support
         self.profile.end = now_millis
         self.profile.add(sample)
@@ -47,7 +50,8 @@ class TestLiveBackendReporting:
             "minimum_time_reporting": timedelta(minutes=6),
             "max_stack_depth": 2345,
             "cpu_limit_percentage": 29,
-            "agent_metadata": AgentMetadata(fleet_info=DefaultFleetInfo())
+            "agent_metadata": AgentMetadata(fleet_info=DefaultFleetInfo()),
+            "errors_metadata": errors_metadata
         }
         self.environment["codeguru_profiler_builder"] = CodeGuruClientBuilder(self.environment)
         self.agent_config = AgentConfiguration(
