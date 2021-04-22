@@ -47,6 +47,7 @@ class LocalAggregator:
         self.profile = None
         self.memory_limit_bytes = environment["memory_limit_bytes"]
         self.last_report_attempted = current_milli_time(clock=self.clock)
+        self.agent_start_time = int(current_milli_time(clock=self.clock))
 
         self.reset()
 
@@ -75,15 +76,15 @@ class LocalAggregator:
 
     def reset(self):
         self.errors_metadata.reset()
+        self.timer.reset()
         self.profile = self.profile_factory(
             profiling_group_name=self.profiling_group_name,
             sampling_interval_seconds=AgentConfiguration.get().sampling_interval.total_seconds(),
             host_weight=self.host_weight,
             start=current_milli_time(clock=self.clock),
-            agent_debug_info=AgentDebugInfo(self.errors_metadata),
+            agent_debug_info=AgentDebugInfo(self.errors_metadata, self.agent_start_time, self.timer),
             clock=self.clock
         )
-        self.timer.reset()
 
     @with_timer("flush")
     def flush(self, force=False, reset=True):

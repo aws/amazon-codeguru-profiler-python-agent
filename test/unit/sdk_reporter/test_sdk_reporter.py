@@ -158,7 +158,7 @@ class TestReport(TestSdkReporter):
                 "configureAgentRnfeAutoCreateEnabledErrors": 0,
                 "createProfilingGroupErrors": 0,
                 "errorsCount": 1,
-                "postAgentProfileErrors": 0,
+                "postAgentProfileErrors": 1,
                 "postAgentProfileRnfeAutoCreateEnabledErrors": 1,
                 "sdkClientErrors": 1
             }
@@ -296,7 +296,7 @@ class TestConfigureAgent(TestSdkReporter):
         with self.client_stubber:
             self.subject.refresh_configuration()
             assert self.subject.errors_metadata.serialize_to_json() == {
-                "configureAgentErrors": 0,
+                "configureAgentErrors": 1,
                 "configureAgentRnfeAutoCreateEnabledErrors": 1,
                 "createProfilingGroupErrors": 0,
                 "errorsCount": 1,
