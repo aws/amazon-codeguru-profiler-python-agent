@@ -1,6 +1,8 @@
 import logging
 import os
 
+from codeguru_profiler_agent.utils.synchronization import synchronized
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,7 @@ class ErrorsMetadata:
             "postAgentProfileRnfeAutoCreateEnabledErrors": self.post_agent_profile_rnfe_auto_create_enabled_errors
         }
 
+    @synchronized
     def increment_sdk_error(self, error_type):
         """
         ErrorsCount is the umbrella of all the kinds of error we want to capture. Currently we have only SdkClientErrors
