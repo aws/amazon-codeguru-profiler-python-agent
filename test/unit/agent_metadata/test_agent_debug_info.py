@@ -20,10 +20,10 @@ class TestAgentDebugInfo:
         }
 
     def test_it_returns_json_with_agent_start_time(self):
-        subject = AgentDebugInfo(agent_start_time=12345)
+        subject = AgentDebugInfo(agent_start_time=1577869200000)  # 2020-01-01T01:00:00Z
 
         serialized_json = subject.serialize_to_json()
-        assert serialized_json["agentStartTime"] == 12345
+        assert serialized_json["agentStartTime"] == "2020-01-01T01:00:00Z"
 
     def test_it_returns_json_with_generic_metrics(self):
         timer = Timer()
@@ -33,8 +33,8 @@ class TestAgentDebugInfo:
 
         serialized_json = subject.serialize_to_json()
         assert serialized_json["genericMetrics"] == {
-            "metric1_max": 12350000,
-            "metric1_average": 12347500.0
+            "metric1_timings_max": 12350000,
+            "metric1_timings_average": 12347500.0
         }
 
 

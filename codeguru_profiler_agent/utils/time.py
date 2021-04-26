@@ -5,7 +5,7 @@ from datetime import datetime
 
 def to_iso(epoch_milli):
     try:
-        return datetime.fromtimestamp(epoch_milli / 1000).isoformat()
+        return datetime.fromtimestamp(epoch_milli / 1000).isoformat() + "Z"  # ISO 8601 date-time format
     except ValueError:
         return str(epoch_milli)
 

@@ -2,6 +2,7 @@ import logging
 import os
 
 from codeguru_profiler_agent.utils.synchronization import synchronized
+from codeguru_profiler_agent.utils.time import to_iso
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ class AgentDebugInfo:
 
     def add_agent_start_time(self, json):
         if self.agent_start_time is not None:
-            json["agentStartTime"] = int(self.agent_start_time)
+            json["agentStartTime"] = to_iso(self.agent_start_time)
 
     def add_errors_metadata(self, json):
         if self.errors_metadata is not None:
@@ -106,10 +107,9 @@ class AgentDebugInfo:
         if self.timer is not None and self.timer.metrics:
             generic_metrics = {}
 
-            for metric in self.timer.metrics:
-                metric_value = self.timer.metrics[metric]
-                generic_metrics[metric + "_max"] = metric_value.max
-                generic_metrics[metric + "_average"] = metric_value.average()
+            for metric, metric_value in self.timer.metrics.items():
+                generic_metrics[metric + "_timings_max"] = metric_value.max
+                generic_metrics[metric + "_timings_average"] = metric_value.average()
 
             if generic_metrics:
                 json["genericMetrics"] = generic_metrics
@@ -119,6 +119,6 @@ def get_process_id():
     try:
         return os.getpid()
     except Exception as e:
-        logger.info("Failed to get the process id, " + repr(e))
+        logger.info("Failed to get the process id", exc_info=True)
         return None
 

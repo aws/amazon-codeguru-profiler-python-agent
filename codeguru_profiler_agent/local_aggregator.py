@@ -47,7 +47,7 @@ class LocalAggregator:
         self.profile = None
         self.memory_limit_bytes = environment["memory_limit_bytes"]
         self.last_report_attempted = current_milli_time(clock=self.clock)
-        self.agent_start_time = int(current_milli_time(clock=self.clock))
+        self.agent_start_time = current_milli_time(clock=self.clock)
 
         self.reset()
 
