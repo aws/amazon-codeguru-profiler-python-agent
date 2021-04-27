@@ -4,6 +4,7 @@ import platform
 import pytest
 from unittest.mock import MagicMock
 
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import ErrorsMetadata, AgentDebugInfo
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata
 from codeguru_profiler_agent.agent_metadata.aws_ec2_instance import AWSEC2Instance
 from codeguru_profiler_agent.model.frame import Frame
@@ -23,7 +24,7 @@ def example_profile():
     start_time = 1514764800000
     end_time = 1514772000000
     profile = Profile(profiling_group_name="TestProfilingGroupName", sampling_interval_seconds=1.0, host_weight=2,
-                      start=start_time, clock=lambda: 1514772000000)
+                      start=start_time, agent_debug_info=AgentDebugInfo(errors_metadata), clock=lambda: 1514772000000)
     profile.add(
         Sample(stacks=[[Frame("bottom"), Frame("middle"), Frame("top")],
                        [Frame("bottom"), Frame("middle"), Frame("different_top")],
@@ -40,10 +41,12 @@ def example_profile():
 agent_metadata = AgentMetadata(
     fleet_info=AWSEC2Instance(host_name="testHostName", host_type="testHostType")
 )
+errors_metadata = ErrorsMetadata()
 
 environment = {
     "timer": Timer(),
-    "agent_metadata": agent_metadata
+    "agent_metadata": agent_metadata,
+    "errors_metadata": errors_metadata
 }
 
 

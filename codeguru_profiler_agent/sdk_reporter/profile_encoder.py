@@ -99,10 +99,14 @@ class ProfileEncoder:
                 "start": int(self._profile.start),
                 "end": int(self._profile.end),
                 "agentMetadata": self._encode_agent_metadata(),
-                "callgraph": self._encode_call_graph(self._profile.callgraph)
+                "callgraph": self._encode_call_graph(self._profile.callgraph),
+                "debugInfo": self._encode_debug_info()
             }
 
             return json.dumps(profile_in_map)
+
+        def _encode_debug_info(self):
+            return self._profile.serialize_agent_debug_info_to_json()
 
         def _encode_agent_metadata(self):
             profile_duration_seconds = self._profile.get_active_millis_since_start() / 1000.0

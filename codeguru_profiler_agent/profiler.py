@@ -7,6 +7,8 @@ import threading
 from datetime import timedelta
 from random import SystemRandom
 from types import MappingProxyType as UnmodifiableDict
+
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import ErrorsMetadata
 from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata
 from codeguru_profiler_agent.profiler_disabler import ProfilerDisabler
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration, AgentConfigurationMerger
@@ -167,6 +169,7 @@ class Profiler:
             frozenset({environment['profiler_thread_name']}.union(environment['excluded_threads']))
         # TODO delay metadata lookup until we need it
         environment['agent_metadata'] = environment.get('agent_metadata') or AgentMetadata()
+        environment['errors_metadata'] = environment.get('errors_metadata') or ErrorsMetadata()
         environment['collector'] = environment.get('collector') or self._select_collector(environment)
         environment["profiler_disabler"] = environment.get('profiler_disabler') or ProfilerDisabler(environment)
         return UnmodifiableDict(environment)

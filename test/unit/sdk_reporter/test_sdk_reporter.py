@@ -5,6 +5,7 @@ import boto3
 
 from datetime import timedelta, datetime
 
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import ErrorsMetadata, AgentDebugInfo
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
 from unittest.mock import MagicMock
@@ -22,7 +23,32 @@ from codeguru_profiler_agent.codeguru_client_builder import CodeGuruClientBuilde
 
 profiling_group_name = "test-ProfilingGroup-name"
 autocreated_test_lambda_profiling_group_name = "aws-lambda-testLambdaName"
-profile = Profile(profiling_group_name, 1.0, 0.5, current_milli_time())
+errors_metadata = ErrorsMetadata()
+profile = Profile(profiling_group_name, 1.0, 0.5, current_milli_time(), AgentDebugInfo(errors_metadata))
+expected_response_create_pg = {
+    'profilingGroup': {
+        'agentOrchestrationConfig': {
+            'profilingEnabled': True
+        },
+        'arn': 'string',
+        'computePlatform': 'AWSLambda',
+        'createdAt': datetime(2015, 1, 1),
+        'name': 'string',
+        'profilingStatus': {
+            'latestAgentOrchestratedAt': datetime(2015, 1, 1),
+            'latestAgentProfileReportedAt': datetime(2015, 1, 1),
+            'latestAggregatedProfile': {
+                'period': 'PT5M',
+                'start': datetime(2015, 1, 1)
+            }
+        },
+        'tags': {
+            'string': 'string'
+        },
+        'updatedAt': datetime(2015, 1, 1)
+    }
+}
+
 
 class TestSdkReporter:
     def before(self):
@@ -42,6 +68,7 @@ class TestSdkReporter:
             "profile_encoder": profile_encoder,
             "codeguru_profiler_builder": codeguru_client_builder,
             "agent_metadata": AgentMetadata(fleet_info=DefaultFleetInfo()),
+            "errors_metadata": errors_metadata,
             "reporting_interval": timedelta(minutes=13),
             "sampling_interval": timedelta(seconds=13),
             "minimum_time_reporting": timedelta(minutes=13),
@@ -55,12 +82,14 @@ class TestSdkReporter:
         self.environment["agent_config_merger"] = AgentConfigurationMerger(default_config)
         self.subject = SdkReporter(environment=self.environment)
         self.subject.setup()
+        self.subject.errors_metadata.reset()
 
     def clear_lambda_specific_environment_variables_for_test_run(self):
         keys_to_delete = [LAMBDA_TASK_ROOT, LAMBDA_RUNTIME_DIR, LAMBDA_EXECUTION_ENV, LAMBDA_MEMORY_SIZE_ENV]
         for key in keys_to_delete:
             if key in os.environ:
                 os.environ.__delitem__(key)
+
 
 class TestReport(TestSdkReporter):
     @before
@@ -84,6 +113,56 @@ class TestReport(TestSdkReporter):
         with self.client_stubber:
             assert self.subject.report(profile) is False
 
+    def test_errors_metadata_when_post_agent_profile_error(self):
+        self.client_stubber.add_client_error('post_agent_profile', service_error_code="InternalFailure",
+                                             service_message='Simulated error in post_agent_profile call')
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 0,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 1,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
+    def test_errors_metadata_when_post_agent_profile_rnfe_error(self):
+        self.client_stubber.add_client_error('post_agent_profile', service_error_code="ResourceNotFoundException",
+                                             service_message='Simulated error in post_agent_profile call')
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 0,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 1,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
+    def test_errors_metadata_when_post_agent_profile_rnfe_error_auto_create_enabled(self):
+        self.client_stubber.add_client_error('post_agent_profile', service_error_code="ResourceNotFoundException",
+                                             service_message='Simulated error in post_agent_profile call')
+        self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
+
+        os.environ.__setitem__(LAMBDA_TASK_ROOT, 'test-task-root')
+        os.environ.__setitem__(LAMBDA_RUNTIME_DIR, 'test-dir')
+
+        with self.client_stubber:
+            assert self.subject.report(profile) is False
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 0,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 1,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 1,
+                "sdkClientErrors": 1
+            }
+
     def test_create_profiling_group_called_when_pg_does_not_exist_lambda_case(self):
         expected_params = {
             'agentProfile': ANY,
@@ -96,29 +175,6 @@ class TestReport(TestSdkReporter):
                                                              'post_agent_profile call',
                                              expected_params=expected_params)
 
-        expected_response_create_pg = {
-            'profilingGroup': {
-                'agentOrchestrationConfig': {
-                    'profilingEnabled': True
-                },
-                'arn': 'string',
-                'computePlatform': 'AWSLambda',
-                'createdAt': datetime(2015, 1, 1),
-                'name': 'string',
-                'profilingStatus': {
-                    'latestAgentOrchestratedAt': datetime(2015, 1, 1),
-                    'latestAgentProfileReportedAt': datetime(2015, 1, 1),
-                    'latestAggregatedProfile': {
-                        'period': 'PT5M',
-                        'start': datetime(2015, 1, 1)
-                    }
-                },
-                'tags': {
-                    'string': 'string'
-                },
-                'updatedAt': datetime(2015, 1, 1)
-            }
-        }
         self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
 
         expected_params_post_agent_profile = {
@@ -184,6 +240,71 @@ class TestConfigureAgent(TestSdkReporter):
             assert AgentConfiguration.get().should_profile is True
             assert AgentConfiguration.get().sampling_interval == timedelta(seconds=13)
 
+    def test_errors_metadata_when_configure_agent_error(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code="InternalFailure",
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 1,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 0,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
+    def test_errors_metadata_when_configure_agent_validation_exception_error(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code="ValidationException",
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 1,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 0,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
+    def test_errors_metadata_when_configure_agent_rnfe_error(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code="ResourceNotFoundException",
+                                             service_message='Simulated error in configure_agent call')
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 1,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 0,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
+    def test_errors_metadata_when_configure_agent_rnfe_error_auto_create_enabled(self):
+        self.client_stubber.add_client_error('configure_agent', service_error_code="ResourceNotFoundException",
+                                             service_message='Simulated error in configure_agent call')
+        self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
+
+        os.environ.__setitem__(LAMBDA_TASK_ROOT, 'test-task-root')
+        os.environ.__setitem__(LAMBDA_RUNTIME_DIR, 'test-dir')
+
+        with self.client_stubber:
+            self.subject.refresh_configuration()
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 1,
+                "configureAgentRnfeAutoCreateEnabledErrors": 1,
+                "createProfilingGroupErrors": 0,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 0,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }
+
     def test_when_backends_sends_resource_not_found_it_stops_the_profiling_in_non_lambda_case(self):
         self.client_stubber.add_client_error('configure_agent', service_error_code='ResourceNotFoundException',
                                              service_message='Simulated error in configure_agent call')
@@ -213,29 +334,6 @@ class TestConfigureAgent(TestSdkReporter):
                                              service_message='Simulated ResourceNotFoundException in '
                                                              'configure_agent call')
 
-        expected_response_create_pg = {
-            'profilingGroup': {
-                'agentOrchestrationConfig': {
-                    'profilingEnabled': True
-                },
-                'arn': 'string',
-                'computePlatform': 'AWSLambda',
-                'createdAt': datetime(2015, 1, 1),
-                'name': 'string',
-                'profilingStatus': {
-                    'latestAgentOrchestratedAt': datetime(2015, 1, 1),
-                    'latestAgentProfileReportedAt': datetime(2015, 1, 1),
-                    'latestAggregatedProfile': {
-                        'period': 'PT5M',
-                        'start': datetime(2015, 1, 1)
-                    }
-                },
-                'tags': {
-                    'string': 'string'
-                },
-                'updatedAt': datetime(2015, 1, 1)
-            }
-        }
         self.client_stubber.add_response('create_profiling_group', expected_response_create_pg)
 
         os.environ.__setitem__(LAMBDA_MEMORY_SIZE_ENV, "512")
@@ -256,3 +354,24 @@ class TestConfigureAgent(TestSdkReporter):
         with self.client_stubber:
             self.subject.refresh_configuration()
             self.client_stubber.assert_no_pending_responses()
+
+
+class TestCreateProfilingGroup(TestSdkReporter):
+    @before
+    def before(self):
+        super().before()
+
+    def test_errors_metadata_when_create_profiling_group_error(self):
+        self.client_stubber.add_client_error('create_profiling_group', service_error_code="InternalFailure",
+                                             service_message='Simulated error in create_profiling_group call')
+        with self.client_stubber:
+            self.subject.create_profiling_group()
+            assert self.subject.errors_metadata.serialize_to_json() == {
+                "configureAgentErrors": 0,
+                "configureAgentRnfeAutoCreateEnabledErrors": 0,
+                "createProfilingGroupErrors": 1,
+                "errorsCount": 1,
+                "postAgentProfileErrors": 0,
+                "postAgentProfileRnfeAutoCreateEnabledErrors": 0,
+                "sdkClientErrors": 1
+            }

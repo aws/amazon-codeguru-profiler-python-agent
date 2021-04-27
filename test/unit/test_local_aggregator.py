@@ -2,6 +2,9 @@ import pytest
 
 from datetime import timedelta
 
+from botocore.stub import ANY
+
+from codeguru_profiler_agent.agent_metadata.agent_debug_info import ErrorsMetadata, AgentDebugInfo
 from codeguru_profiler_agent.reporter.agent_configuration import AgentConfiguration
 from codeguru_profiler_agent.utils.time import current_milli_time
 from test.pytestutils import before
@@ -22,6 +25,8 @@ CURRENT_TIME_FOR_TESTING_SECOND = 1528887859.058
 TEST_PROFILING_GROUP_NAME = "test-application"
 TEST_SAMPLING_INTERVAL = 0.5
 TEST_HOST_WEIGHT = 1.0
+ERRORS_METADATA = MagicMock()
+AGENT_DEBUG_INFO = MagicMock()
 
 ONE_SECOND = timedelta(seconds=1)
 
@@ -35,7 +40,8 @@ def mock_timer():
 def assert_profile_is_reset(profile_factory, clock):
     profile_factory.assert_called_once_with(
         profiling_group_name=TEST_PROFILING_GROUP_NAME, host_weight=TEST_HOST_WEIGHT,
-        sampling_interval_seconds=TEST_SAMPLING_INTERVAL, start=current_milli_time(clock), clock=clock)
+        sampling_interval_seconds=TEST_SAMPLING_INTERVAL, start=current_milli_time(clock),
+        agent_debug_info=ANY, clock=clock)
 
 
 class TestLocalAggregator:
@@ -57,6 +63,7 @@ class TestLocalAggregator:
             "sampling_interval": timedelta(seconds=TEST_SAMPLING_INTERVAL),
             "host_weight": TEST_HOST_WEIGHT,
             "profile_factory": self.mock_profile_factory,
+            "errors_metadata": ERRORS_METADATA,
             "memory_limit_bytes": DEFAULT_MEMORY_LIMIT_BYTES,
             "clock": self.clock,
             "timer": self.timer,
@@ -78,9 +85,9 @@ class TestLocalAggregator:
             )
         )
 
-        assert len(self.environment.keys()) == 7
+        assert len(self.environment.keys()) == 8
         self.profiler = Profiler(profiling_group_name=TEST_PROFILING_GROUP_NAME, environment_override=self.environment)
-        assert len(self.environment.keys()) == 6
+        assert len(self.environment.keys()) == 7
 
         self.subject = LocalAggregator(**self.configuration)
         self.mock_profile_factory.reset_mock()
