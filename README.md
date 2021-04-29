@@ -6,7 +6,7 @@ For more details, check the documentation: https://docs.aws.amazon.com/codeguru/
 
 This package is being released to PyPI as [codeguru-profiler-agent](https://pypi.org/project/codeguru-profiler-agent), so use it as any Python package from PyPI.
 
-For a demo application that uses this agent, check our [demo application](https://github.com/aws-samples/aws-codeguru-profiler-python-demo-application).
+For a demo application that uses this agent, check our [demo applications](https://github.com/aws-samples/aws-codeguru-profiler-python-demo-application).
 
 ## How to contribute
 
