@@ -11,6 +11,7 @@ TRUNCATED_FRAME = Frame(name="<Truncated>")
 
 TIME_SLEEP_FRAME = Frame(name="<Sleep>")
 LXML_SCHEMA_FRAME = Frame(name="lxml.etree:XMLSchema:__init__")
+QUEUE_BLOCKING_GET_FRAME = Frame(name="<queue.get>")
 
 
 def get_stacks(threads_to_sample, excluded_threads, max_depth):
@@ -78,6 +79,8 @@ def _maybe_append_synthetic_frame(result, frame, line_no):
     line = linecache.getline(frame.f_code.co_filename, line_no).strip()
     if "sleep(" in line:
         result.append(TIME_SLEEP_FRAME)
+    elif ".get(block=True" in line:
+        result.append(QUEUE_BLOCKING_GET_FRAME)
     elif "etree.XMLSchema(" in line:
         result.append(LXML_SCHEMA_FRAME)
 
