@@ -119,7 +119,8 @@ class ProfileEncoder:
                         cpu_time_seconds=self._profile.cpu_time_seconds,
                         average_num_threads=average_num_threads,
                         memory_usage_mb=self._convert_to_mb(self._profile.get_memory_usage_bytes()),
-                        overhead_ms=self._profile.overhead_ms
+                        overhead_ms=self._profile.overhead_ms,
+                        total_sample_count = self._profile.total_sample_count
             )
 
         def _convert_to_mb(self, bytes_to_convert):

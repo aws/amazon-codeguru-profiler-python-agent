@@ -123,6 +123,9 @@ class TestInsideTheResult(TestSdkProfileEncoder):
     def test_it_includes_the_memory_overhead_in_the_agent_metadata(self):
         assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memory_usage_mb"] > 0)
 
+    def test_it_includes_the_num_times_sampled_in_the_agent_metadata(self):
+        assert (self.decoded_json_result()["agentMetadata"]["numTimesSampled"] > 0)
+
     def test_it_handles_unicode_frames_correctly(self):
         self.profile.add(
             Sample(stacks=[[Frame("unicode_bottom"), Frame(u"😉"), Frame(u"🙃")]]))
