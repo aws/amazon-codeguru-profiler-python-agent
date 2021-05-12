@@ -6,7 +6,7 @@ from codeguru_profiler_agent.reporter.agent_configuration import AgentConfigurat
 logger = logging.getLogger(__name__)
 CHECK_KILLSWITCH_FILE_INTERVAL_SECONDS = 60
 MINIMUM_MEASURES_IN_DURATION_METRICS = 20
-MINIMUM_SAMPLES_IN_PROFILE = 5
+MINIMUM_SAMPLES_IN_PROFILE = 1
 
 
 class ProfilerDisabler:
