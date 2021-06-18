@@ -67,7 +67,7 @@ class AgentMetadata:
         return self._fleet_info
 
     def serialize_to_json(self, sample_weight, duration_ms, cpu_time_seconds,
-                          average_num_threads, overhead_ms, memory_usage_mb):
+                          average_num_threads, overhead_ms, memory_usage_mb, total_sample_count):
         """
         This needs to be compliant with agent profile schema.
         """
@@ -89,7 +89,8 @@ class AgentMetadata:
                 "cpuTimeInSeconds": cpu_time_seconds,
                 "metrics": {
                     "numThreads": average_num_threads
-                }
+                },
+                "numTimesSampled": total_sample_count
             }
             if overhead_ms != 0:
                 self.json_rep["agentOverhead"]["timeInMs"] = overhead_ms
