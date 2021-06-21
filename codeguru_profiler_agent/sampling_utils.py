@@ -87,6 +87,12 @@ def _maybe_append_synthetic_frame(result, frame, line_no):
 
 def _extract_frames(end_frame, max_depth):
     stack = list(traceback.walk_stack(end_frame))[::-1][0:max_depth]
+    # When running the sample app with uwsgi for Python 3.8.10-3.9.2, the traceback command
+    # returns a file path that contains "/.".
+    # To not let the path go into the module name, we are removing it later in the ProfileEncoder.
+    # Examples:
+    # - file '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/./polls/views.py', line 104, code get_queryset>, 104
+    # - file '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/polls/views.py', line 104, code get_queryset>, 104
     stack_entries = _extract_stack(stack, max_depth)
 
     if len(stack_entries) == max_depth:
