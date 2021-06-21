@@ -13,6 +13,7 @@ import json
 import io
 import gzip
 from datetime import timedelta
+from pathlib import Path
 
 from codeguru_profiler_agent.metrics.timer import Timer
 from codeguru_profiler_agent.model.profile import Profile
@@ -327,6 +328,25 @@ class TestWhenGzippingIsEnabled(TestSdkProfileEncoder):
             fileobj=self.output_stream, mode="rb").read()
 
         assert (len(uncompressed_result) > 0)
+
+
+class TestModulePathExtractorWithCurrentPath:
+    @before
+    def before(self):
+        self.current_path = str(Path().absolute())
+        self.subject = ProfileEncoder(gzip=False, environment=environment).ModulePathExtractor(sys_path=[])
+
+    def test_it_removes_current_path(self):
+        file_path = self.current_path + '/polls/views.py'
+        assert self.subject.get_module_path(file_path) == "polls.views"
+
+    def test_it_removes_current_path_and_slash_and_dot(self):
+        file_path = self.current_path + '/./polls/views.py'
+        assert self.subject.get_module_path(file_path) == "polls.views"
+
+    def test_it_does_nothing_when_file_path_has_no_current_path(self):
+        file_path ='/polls/views.py'
+        assert self.subject.get_module_path(file_path) == "polls.views"
 
 
 class TestModulePathExtractor:

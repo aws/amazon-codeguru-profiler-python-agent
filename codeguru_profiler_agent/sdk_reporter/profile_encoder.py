@@ -10,24 +10,33 @@ from pathlib import Path
 GZIP_BALANCED_COMPRESSION_LEVEL = 6
 DEFAULT_FRAME_COMPONENT_DELIMITER = ":"
 
-
 def _get_module_path(file_path, sys_paths):
     """
     We tried to remove the python library root path in order to give a reasonable expression of the module path.
     For example, /tmp/bin/python/site-packages/great_app/simple_expansions/simple_interface.py
     will get turned into great_app.simple_expansions.simple_interface given that the syspath contains
     /tmp/bin/python/site-packages
+
+    We are making sure we're removing the current path.
+    For example, '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/./polls/views.py'
+    will get turned into `polls.views' given that the file path contains the current path.
+    This should not happen usually, but we've found a case where the "/." is added when calling traceback.walk_stack(..)
+    in a uwsgi application. Check sampling_utils.py file for details.
+
+    sampling_utils.py returns different values when calling traceback.walk_stack(..) for uwsgi vs non-uwsgi
+    for Python 3.8.10-Python 3.9.2.
+    Examples of results:
+    - file '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/./polls/views.py', line 104, code get_queryset>, 104
+    - file '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/polls/views.py', line 104, code get_queryset>, 104
     """
     module_path = file_path
 
     if platform.system() == "Windows":
         # In Windows, separator can either be / or \ from experimental result
-        file_path = file_path.replace("/", os.sep)
+        module_path = module_path.replace("/", os.sep)
 
-    for root in sys_paths:
-        if root in file_path:
-            module_path = file_path.replace(root, "")
-            break
+    # remove prefix path
+    module_path = _remove_prefix_path(module_path, sys_paths)
 
     # remove suffix
     module_path = str(Path(module_path).with_suffix(""))
@@ -41,6 +50,15 @@ def _get_module_path(file_path, sys_paths):
 
     return module_path
 
+
+def _remove_prefix_path(module_path, sys_paths):
+    current_path = str(Path().absolute())
+    if current_path in module_path:
+        return module_path.replace(current_path, "").replace("/./", "/")
+    for root in sys_paths:
+        if root in module_path:
+            return module_path.replace(root, "")
+    return module_path
 
 class ProfileEncoder:
     """
