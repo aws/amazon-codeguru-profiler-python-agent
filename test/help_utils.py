@@ -1,6 +1,8 @@
 import threading
 import time
 from queue import Queue
+import boto3
+from botocore.client import Config
 
 INTEGRATION_TEST_ACCOUNT_ID = "519630429520"
 MY_PROFILING_GROUP_NAME_FOR_INTEG_TESTS = "MyProfilingGroupForIntegrationTests"
@@ -48,6 +50,23 @@ class HelperThreadRunner:
         """
         self.dummy_method()
 
+    def make_boto_api_call(self, boto_client):
+        try:
+            boto_client.put_metric_data(Namespace="any_namespace", MetricData=[])
+        except Exception as e:
+            print("This should be a ConnectTimeoutError", e)
+
+    def new_thread_sending_boto_api_call(self, timeout_seconds=1, thread_name="test-boto-api-call"):
+        no_retry_config = Config(connect_timeout=timeout_seconds, retries={'max_attempts': 0})
+        # we do not want boto to look for real credentials so provide fake ones
+        session = boto3.Session(region_name="us-east-1", aws_access_key_id="fake_id", aws_secret_access_key="fake_key")
+        # we set a fake endpoint in the client because we do not want to make a real call
+        # this is only so we can have a thread inside an api call trying to make a connection
+        # long enough for us to take a sample
+        no_target_client = session.client('cloudwatch', endpoint_url='https://notExisting.com/', config=no_retry_config)
+        self.boto_thread = threading.Thread(
+            name=thread_name, target=self.make_boto_api_call, daemon=True, kwargs={"boto_client": no_target_client})
+        self.boto_thread.start()
 
 def wait_for(condition, timeout_seconds=1.0, poll_interval_seconds=0.01):
     """
