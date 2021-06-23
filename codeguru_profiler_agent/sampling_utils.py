@@ -4,9 +4,10 @@ This module handles all interactions with python sys and traceback library for s
 import linecache
 import threading
 import traceback
-
+import re
 from codeguru_profiler_agent.model.frame import Frame
 
+BOTO_CLIENT_PATH = re.compile("[/\\\\]botocore[/\\\\]client.py$")
 TRUNCATED_FRAME = Frame(name="<Truncated>")
 
 TIME_SLEEP_FRAME = Frame(name="<Sleep>")
@@ -64,15 +65,35 @@ def _extract_stack(stack, max_depth):
     """
     result = []
     for raw_frame, line_no in stack:
+        _maybe_add_boto_operation_name(raw_frame, result)
         co = raw_frame.f_code
         result.append(
             Frame(name=co.co_name, class_name=_extract_class(raw_frame.f_locals), line_no=line_no,
                   file_path=co.co_filename)
         )
-    if len(stack) < max_depth:
+    if len(result) < max_depth:
         last_frame, last_frame_line_no = stack[-1]
         _maybe_append_synthetic_frame(result, last_frame, last_frame_line_no)
-    return result
+    return result[:max_depth]
+
+
+def _maybe_add_boto_operation_name(raw_frame, result):
+    """
+    boto is dealing with API calls in a very generic way so by default the sampling
+    would only show that we are making an api call without having the actual operation name.
+    This function checks if this frame is botocore.client.py:_api_call and if it is, it adds
+    a frame with the actual operation name.
+    :param raw_frame: the raw frame
+    """
+    if (raw_frame.f_code.co_name == '_api_call'
+            and BOTO_CLIENT_PATH.search(raw_frame.f_code.co_filename) is not None
+            and raw_frame.f_locals and 'py_operation_name' in raw_frame.f_locals.keys()
+            and raw_frame.f_locals.get('py_operation_name')):
+        result.append(
+            Frame(name=raw_frame.f_locals.get('py_operation_name'),
+                  class_name=_extract_class(raw_frame.f_locals),
+                  file_path=raw_frame.f_code.co_filename)
+        )
 
 
 def _maybe_append_synthetic_frame(result, frame, line_no):
