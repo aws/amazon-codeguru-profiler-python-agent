@@ -2,6 +2,13 @@
 CHANGELOG
 =========
 
+1.2.0 (layer_v7)
+===================
+* Add operation name frame in stacks with boto api calls.
+* Adds NUM_TIMES_SAMPLED agent metadata to the submitted profile.
+* Add errors metadata in agent debug info with granular sdk client error metrics.
+* Add create_profiling_group call in refresh_configuration and report().
+
 1.0.6 (layer_v5)
 ===================
 * Use IMDSv2 instead of v1 when calling EC2 Instance Metadata.
