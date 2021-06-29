@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.2.1 (layer_v8)
+===================
+* Fix bug for module path for Fargate.
+
 1.2.0 (layer_v7)
 ===================
 * Add operation name frame in stacks with boto api calls.
