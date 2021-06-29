@@ -17,7 +17,7 @@ def _get_module_path(file_path, sys_paths):
     will get turned into great_app.simple_expansions.simple_interface given that the syspath contains
     /tmp/bin/python/site-packages
 
-    We are making sure we're removing the current path.
+    We are making sure we're removing the current path for this special usecase, by checking if it contains "/./".
     For example, '/Users/mirelap/Documents/workspace/JSON/aws-codeguru-profiler-python-demo-application/sample-demo-django-app/./polls/views.py'
     will get turned into `polls.views' given that the file path contains the current path.
     This should not happen usually, but we've found a case where the "/." is added when calling traceback.walk_stack(..)
@@ -40,6 +40,7 @@ def _get_module_path(file_path, sys_paths):
 
     # remove suffix
     module_path = str(Path(module_path).with_suffix(""))
+
     # remove drive (applicable for WINDOWS customers)
     module_path = os.path.splitdrive(module_path)[1]
 
@@ -52,12 +53,17 @@ def _get_module_path(file_path, sys_paths):
 
 
 def _remove_prefix_path(module_path, sys_paths):
-    current_path = str(Path().absolute())
-    if current_path in module_path:
-        return module_path.replace(current_path, "").replace("/./", "/")
+    if "/./" in module_path and platform.system() != "Windows":
+        module_path = module_path.replace("/./", "/")
+        current_path = str(Path().absolute())
+        if current_path != "/": # this may be Fargate
+            return module_path.replace(current_path, "")
+        return module_path
+
     for root in sys_paths:
         if root in module_path:
             return module_path.replace(root, "")
+
     return module_path
 
 class ProfileEncoder:
