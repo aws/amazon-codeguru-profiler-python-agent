@@ -83,9 +83,6 @@ class Profile:
         additional work in maintaining pause time which isn't worth as it makes the logic complex with very little gain.
 
         So we are setting it to current time and in some corner cases to last_pause time.
-
-        Additional note: last_pause is set to none as part of resume and _paused_ms is added as part of resume. So we won't
-        end up in above state in those corner cases where we select last_pause.
         """
         end = self.last_pause if self.last_pause is not None else current_milli_time(clock=self._clock)
         active_time_millis_since_start = end - self.start - self._paused_ms
@@ -147,8 +144,8 @@ class Profile:
             # resume gets called when profile is running
             return
         self.last_resume = current_milli_time(clock=self._clock)
-        self._paused_ms += self.last_resume - self.last_pause
         self.last_pause = None
+        self._paused_ms += self.last_resume - self.last_pause
 
     def is_empty(self):
         return self.total_seen_threads_count == 0.0
