@@ -420,10 +420,10 @@ class TestWhenEndHasBeenSet(TestProfile):
         self.subject.resume()
         self.turn_clock(seconds=5)
         self.subject.end = self.mock_clock() * 1000
-        self.turn_clock(seconds=1)  # that extra second should not be included in the duration
+        self.turn_clock(seconds=5)
 
     def test_it_returns_duration_up_to_end_time(self):
-        assert self.subject.get_active_millis_since_start() == 14000
+        assert self.subject.get_active_millis_since_start() == 19000
 
 
 class TestSetOverhead(TestProfile):

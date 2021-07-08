@@ -1,4 +1,5 @@
 import time
+import logging
 
 from random import SystemRandom
 from codeguru_profiler_agent.model.call_graph_node import CallGraphNode
@@ -9,6 +10,7 @@ from codeguru_profiler_agent.utils.time import to_iso
 
 ROOT_NODE_NAME = "ALL"
 
+logger = logging.getLogger(__name__)
 
 class Profile:
     def __init__(self, profiling_group_name, sampling_interval_seconds, host_weight, start, agent_debug_info, clock=time.time):
@@ -56,11 +58,40 @@ class Profile:
         This returns the total "active" wall clock time since start. In AWS lambda the process can be frozen, the
         time while we are frozen should not be counted in here. In an EC2 or other type of host it is simply the wall
         clock time since start.
-        If the "end" time has been set, we give the active time between start and end otherwise between start and now
+
+        Previously self.end was used to calculate active_millis_since_start but self.end is updated when a sample is added
+        so in rare cases where a sample is collected before the last pause time then we might add additional pause time
+        which can lead to incorrect calculation of active time. In worst cases, it can even lead to negative values depending
+        on the pause time.
+
+        Below is an example indicating the potential error of considering self.end in the calculation.
+        ------------------------------------------------------------------
+        |          |        |    |         |    |     |       |     ||||||
+        S          P        R    P         R    SE    P       R     REPORT
+        s1_________|___p1___|____|____p2___|____e1____|___p3__|__________|
+
+        S - Start
+        P - Pause
+        R - Resume
+        SE - self.end (last sample)
+        REPORT - Calculating active time.
+
+        If we consider self.end which is e1 in above case then active time would be e1-s1-(p1+p2+p3). But pause p3 is after e1
+        so that leads to incorrect calculation of active time.
+
+        Ideally we would want to set profile_end to be last sample time and subtract pause times only before that but it requires
+        additional work in maintaining pause time which isn't worth as it makes the logic complex with very little gain.
+
+        So we are setting it to current time and in some corner cases to last_pause time.
         """
-        end = self.last_pause if self.last_pause is not None else \
-            self._end if self._end is not None else current_milli_time(clock=self._clock)
-        return end - self.start - self._paused_ms
+        end = self.last_pause if self.last_pause is not None else current_milli_time(clock=self._clock)
+        active_time_millis_since_start = end - self.start - self._paused_ms
+        logger.debug(
+            "Active time since start is {activeTime} which is calculated using start: {start}, end: {end}, last_pause: {last_pause}, paused_ms: {paused_ms}, last_resume: {last_resume}"
+            .format(activeTime = active_time_millis_since_start, start = self.start, end = self._end, last_pause = self.last_pause, paused_ms = self._paused_ms, last_resume = self.last_resume)
+        )
+
+        return active_time_millis_since_start
 
     def add(self, sample):
         """
@@ -113,8 +144,9 @@ class Profile:
             # resume gets called when profile is running
             return
         self.last_resume = current_milli_time(clock=self._clock)
-        self._paused_ms += self.last_resume - self.last_pause
+        prev_last_pause = self.last_pause
         self.last_pause = None
+        self._paused_ms += self.last_resume - prev_last_pause
 
     def is_empty(self):
         return self.total_seen_threads_count == 0.0
