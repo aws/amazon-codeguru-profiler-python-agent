@@ -144,8 +144,9 @@ class Profile:
             # resume gets called when profile is running
             return
         self.last_resume = current_milli_time(clock=self._clock)
+        prev_last_pause = self.last_pause
         self.last_pause = None
-        self._paused_ms += self.last_resume - self.last_pause
+        self._paused_ms += self.last_resume - prev_last_pause
 
     def is_empty(self):
         return self.total_seen_threads_count == 0.0
