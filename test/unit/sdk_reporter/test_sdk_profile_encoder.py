@@ -23,9 +23,9 @@ from codeguru_profiler_agent.sdk_reporter.profile_encoder import ProfileEncoder
 
 def example_profile():
     start_time = 1514764800000
-    end_time = 1514772000000
+    end_time = 1514771000000
     profile = Profile(profiling_group_name="TestProfilingGroupName", sampling_interval_seconds=1.0, host_weight=2,
-                      start=start_time, agent_debug_info=AgentDebugInfo(errors_metadata), clock=lambda: 1514772000000)
+                      start=start_time, agent_debug_info=AgentDebugInfo(errors_metadata), clock=lambda: 1514772000)
     profile.add(
         Sample(stacks=[[Frame("bottom"), Frame("middle"), Frame("top")],
                        [Frame("bottom"), Frame("middle"), Frame("different_top")],
@@ -89,7 +89,7 @@ class TestInsideTheResult(TestSdkProfileEncoder):
 
     def test_it_includes_the_end_time_from_the_profile_in_epoch_millis(
             self):
-        assert (self.decoded_json_result()["end"] == 1514772000000)
+        assert (self.decoded_json_result()["end"] == 1514771000000)
 
     def test_it_includes_the_agent_info_in_the_agent_metadata(self):
         assert (self.decoded_json_result()["agentMetadata"]["agentInfo"]["type"] ==
