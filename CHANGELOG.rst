@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.2.2 (layer_v9)
+===================
+* Fix bug on calculating active millis since start.
+
 1.2.1 (layer_v8)
 ===================
 * Fix bug for module path for Fargate.
