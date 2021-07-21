@@ -83,7 +83,7 @@ class AgentMetadata:
                     "version": self.agent_info.version
                 },
                 "agentOverhead": {
-                    "memory_usage_mb": memory_usage_mb
+                    "memory_usage_mb": int(memory_usage_mb)
                 },
                 "runtimeVersion": self.runtime_version,
                 "cpuTimeInSeconds": cpu_time_seconds,
@@ -93,5 +93,5 @@ class AgentMetadata:
                 "numTimesSampled": total_sample_count
             }
             if overhead_ms != 0:
-                self.json_rep["agentOverhead"]["timeInMs"] = overhead_ms
+                self.json_rep["agentOverhead"]["timeInMs"] = int(overhead_ms)
         return self.json_rep
