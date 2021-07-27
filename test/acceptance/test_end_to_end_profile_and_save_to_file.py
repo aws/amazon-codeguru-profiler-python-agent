@@ -92,7 +92,7 @@ class TestEndToEndProfileAndSaveToFile:
         assert agent_metadata["agentOverhead"]
         assert agent_metadata["durationInMs"]
         assert agent_metadata["sampleWeights"]["WALL_TIME"]
-        assert type(agent_metadata["agentOverhead"]["memory_usage_mb"]) is int
+        assert type(agent_metadata["agentOverhead"]["memoryInMB"]) is int
 
         if platform.system() != "Windows":
             # Due to the issue mentioned on https://bugs.python.org/issue37859, we would skip checking agentOverhead for

@@ -122,7 +122,7 @@ class TestInsideTheResult(TestSdkProfileEncoder):
         assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["timeInMs"] == 256)
 
     def test_it_includes_the_memory_overhead_in_the_agent_metadata(self):
-        assert (type(self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memory_usage_mb"]) is int)
+        assert (type(self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memoryInMB"]) is int)
 
     def test_it_includes_the_num_times_sampled_in_the_agent_metadata(self):
         assert (self.decoded_json_result()["agentMetadata"]["numTimesSampled"] > 0)
