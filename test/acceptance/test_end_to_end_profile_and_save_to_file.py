@@ -92,11 +92,11 @@ class TestEndToEndProfileAndSaveToFile:
         assert agent_metadata["agentOverhead"]
         assert agent_metadata["durationInMs"]
         assert agent_metadata["sampleWeights"]["WALL_TIME"]
-        assert agent_metadata["agentOverhead"]["memory_usage_mb"]
+        assert type(agent_metadata["agentOverhead"]["memoryInMB"]) is int
 
         if platform.system() != "Windows":
             # Due to the issue mentioned on https://bugs.python.org/issue37859, we would skip checking agentOverhead for
             # Windows system as the agent is only run for very short period of time. We may improve the accuracy of
             # measuring the overhead by using time.perf_counter_ns for Windows in the future.
-            assert agent_metadata["agentOverhead"]["timeInMs"]
+            assert type(agent_metadata["agentOverhead"]["timeInMs"]) is int
             assert agent_metadata["cpuTimeInSeconds"] > 0

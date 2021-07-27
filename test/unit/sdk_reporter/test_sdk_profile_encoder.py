@@ -31,7 +31,7 @@ def example_profile():
                        [Frame("bottom"), Frame("middle"), Frame("different_top")],
                        [Frame("bottom"), Frame("middle")]], attempted_sample_threads_count=10, seen_threads_count=15))
     profile.end = end_time
-    profile.set_overhead_ms(timedelta(milliseconds=256))
+    profile.set_overhead_ms(timedelta(microseconds=256123))
     if platform.system() == "Windows":
         # In Windows, as time.process stays constant if no cpu time was used (https://bugs.python.org/issue37859), we
         # would need to manually override the cpu_time_seconds to ensure the test runs as expected
@@ -122,7 +122,7 @@ class TestInsideTheResult(TestSdkProfileEncoder):
         assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["timeInMs"] == 256)
 
     def test_it_includes_the_memory_overhead_in_the_agent_metadata(self):
-        assert (self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memory_usage_mb"] > 0)
+        assert (type(self.decoded_json_result()["agentMetadata"]["agentOverhead"]["memoryInMB"]) is int)
 
     def test_it_includes_the_num_times_sampled_in_the_agent_metadata(self):
         assert (self.decoded_json_result()["agentMetadata"]["numTimesSampled"] > 0)

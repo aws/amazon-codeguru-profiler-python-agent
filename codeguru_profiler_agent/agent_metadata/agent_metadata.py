@@ -69,7 +69,7 @@ class AgentMetadata:
     def serialize_to_json(self, sample_weight, duration_ms, cpu_time_seconds,
                           average_num_threads, overhead_ms, memory_usage_mb, total_sample_count):
         """
-        This needs to be compliant with agent profile schema.
+        This needs to be compliant with the AgentMetadata schema that is used on the service side.
         """
         if self.json_rep is None:
             self.json_rep = {
@@ -83,7 +83,7 @@ class AgentMetadata:
                     "version": self.agent_info.version
                 },
                 "agentOverhead": {
-                    "memory_usage_mb": memory_usage_mb
+                    "memoryInMB": int(memory_usage_mb)
                 },
                 "runtimeVersion": self.runtime_version,
                 "cpuTimeInSeconds": cpu_time_seconds,
@@ -93,5 +93,5 @@ class AgentMetadata:
                 "numTimesSampled": total_sample_count
             }
             if overhead_ms != 0:
-                self.json_rep["agentOverhead"]["timeInMs"] = overhead_ms
+                self.json_rep["agentOverhead"]["timeInMs"] = int(overhead_ms)
         return self.json_rep
