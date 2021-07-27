@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.2.3 (layer_v10)
+===================
+* Fix bug to sent agent overhead in the rigth format: int and as part of memoryInMB (instead of the previous string as part of memory_usage_mb).
+
 1.2.2 (layer_v9)
 ===================
 * Fix bug on calculating active millis since start.
