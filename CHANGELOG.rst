@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.2.4 (layer_v11)
+===================
+* Updated lambda bootstrap code to support profiling python 3.9 lambda functions.
+
 1.2.3 (layer_v10)
 ===================
 * Fix bug to sent agent overhead in the rigth format: int and as part of memoryInMB (instead of the previous string as part of memory_usage_mb).
