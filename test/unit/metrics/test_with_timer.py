@@ -15,7 +15,9 @@ class TargetClass:
     @with_timer(metric_name="test-foo-cpu", measurement="cpu-time")
     def foo_cpu(self):
         # Run something to make sure the cpu clock does tick (https://bugs.python.org/issue37859)
-        len(str(2 ** 500_000))
+        sum_x = 0
+        for i in range(10000000):
+            sum_x += i
         return
 
 
