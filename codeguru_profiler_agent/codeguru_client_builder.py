@@ -42,8 +42,11 @@ class CodeGuruClientBuilder:
         region = self._get_region_or_default()
 
         # the default retry mode is 'legacy', not 'standard'
+        # retry at most once to avoid retry storms
+        # see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
         standard_config = Config(
-            retries={
+            retries = {
+                'max_attempts': 1,
                 'mode': 'standard'
             }
         )
