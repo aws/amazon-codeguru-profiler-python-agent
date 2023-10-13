@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import functools
 
 from time import perf_counter
 from time import process_time
@@ -19,6 +20,7 @@ def with_timer(metric_name, measurement="cpu-time"):
                 "Unexpected measurement mode for timer '{}'".format(
                     str(measurement)))
 
+        @functools.wraps(fn)
         def timed(self, *args, **kwargs):
             if self.timer is None:
                 return fn(self, *args, **kwargs)
