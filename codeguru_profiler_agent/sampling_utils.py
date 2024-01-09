@@ -97,7 +97,7 @@ def _maybe_add_boto_operation_name(raw_frame, result):
 
 
 def _maybe_append_synthetic_frame(result, frame, line_no):
-    line = linecache.getline(frame.f_code.co_filename, line_no).strip()
+    line = linecache.getline(frame.f_code.co_filename, line_no or 0).strip()
     if "sleep(" in line:
         result.append(TIME_SLEEP_FRAME)
     elif ".get(block=True" in line:
