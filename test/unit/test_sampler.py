@@ -69,26 +69,23 @@ class TestWhenThereAreMoreThreadsThanMaxThreads(TestSampler):
         self.environment["max_threads"] = 1
         self.subject = Sampler(environment=self.environment)
 
-    def test_it_calls_get_stacks_with_subset_of_threads(self):
+    def test_it_calls_the_get_stacks_method_with_a_subset_of_the_threads(self):
         self.subject.sample()
 
-        expected_calls = [
+        allowed_results = [
             mock.call(
-                threads_to_sample=[("fake_thread_1", "fake_thread_frames_1")],
+                threads_to_sample=list([("fake_thread_1", "fake_thread_frames_1")]),
                 excluded_threads=ANY,
                 max_depth=ANY,
             ),
             mock.call(
-                threads_to_sample=[("fake_thread_2", "fake_thread_frames_2")],
+                threads_to_sample=list([("fake_thread_2", "fake_thread_frames_2")]),
                 excluded_threads=ANY,
                 max_depth=ANY,
             ),
         ]
 
-        # Convert call_args_list to a list of tuples for proper comparison
-        actual_calls = [tuple(call[0]) for call in self.mock_get_stacks.call_args_list]
-
-        assert all(call in expected_calls for call in actual_calls)
+        assert self.mock_get_stacks.call_args in allowed_results
 
 
 class TestWhenACustomStackDepthLimitIsSpecified(TestSampler):
