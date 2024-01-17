@@ -73,7 +73,7 @@ class TestWhenThereAreMoreThreadsThanMaxThreads(TestSampler):
             self):
         self.subject.sample()
 
-         allowed_results = [
+        allowed_results = [
             mock.call(
                 threads_to_sample=[("fake_thread_1", "fake_thread_frames_1")],
                 excluded_threads=ANY,
