@@ -1,4 +1,4 @@
-from platform import system
+import platform
 import sys
 from test.pytestutils import before
 
