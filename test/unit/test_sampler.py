@@ -86,9 +86,9 @@ class TestWhenThereAreMoreThreadsThanMaxThreads(TestSampler):
         ]
 
         # Convert call_args_list to a list of tuples for proper comparison
-        actual_calls = [call[0] for call in self.mock_get_stacks.call_args_list]
+        actual_calls = [tuple(call[0]) for call in self.mock_get_stacks.call_args_list]
 
-        assert set(actual_calls).issubset(expected_calls)
+        assert all(call in expected_calls for call in actual_calls)
 
 
 class TestWhenACustomStackDepthLimitIsSpecified(TestSampler):
