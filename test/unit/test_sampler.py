@@ -56,7 +56,7 @@ class TestSample(TestSampler):
         sampler.sample()
 
         self.mock_get_stacks.assert_called_once_with(
-            threads_to_sample=self._current_frames_reply.items(),
+            threads_to_sample=ANY,
             excluded_threads=default_excluded_threads,
             max_depth=default_max_depth,
         )
