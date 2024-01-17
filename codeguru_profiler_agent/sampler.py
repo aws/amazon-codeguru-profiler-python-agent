@@ -56,7 +56,7 @@ class Sampler:
                       seen_threads_count=all_threads_count)
 
     def _get_all_threads(self):
-        return self._thread_lister._current_frames().items()
+        return list(self._thread_lister._current_frames().items())
 
     def _threads_to_sample_from(self, all_threads):
         if len(all_threads) > self._max_threads:
