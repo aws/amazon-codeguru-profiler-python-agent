@@ -17,7 +17,7 @@ class TargetClass:
     @with_timer(metric_name="test-foo-cpu", measurement="cpu-time")
     def foo_cpu(self):
         # Run something to make sure the cpu clock does tick (https://bugs.python.org/issue37859)
-        if (sys.version_info > (3, 6) and platform.system() != 'Windows') or (sys.version_info > (3, 9) and platform.system() == 'Windows'):
+        if (sys.version_info >= (3, 7) and platform.system() != 'Windows') or (sys.version_info >= (3, 10) and platform.system() == 'Windows'):
             sys.set_int_max_str_digits(0)
         len(str(2 ** 500_000))
         return
