@@ -73,22 +73,20 @@ class TestWhenThereAreMoreThreadsThanMaxThreads(TestSampler):
             self):
         self.subject.sample()
 
-        allowed_results = [
+         allowed_results = [
             mock.call(
-                threads_to_sample=[("fake_thread_1",
-                                    "fake_thread_frames_1")],
+                threads_to_sample=[("fake_thread_1", "fake_thread_frames_1")],
                 excluded_threads=ANY,
                 max_depth=ANY,
             ),
             mock.call(
-                threads_to_sample=[("fake_thread_2",
-                                    "fake_thread_frames_2")],
+                threads_to_sample=[("fake_thread_2", "fake_thread_frames_2")],
                 excluded_threads=ANY,
                 max_depth=ANY,
             ),
         ]
 
-        assert (self.mock_get_stacks.call_args in sorted(allowed_results))
+        assert (self.mock_get_stacks.call_args in allowed_results)
 
     def test_it_includes_the_number_of_threads_it_attempted_to_sample_and_how_many_in_total_were_seen_in_the_system(
             self):
