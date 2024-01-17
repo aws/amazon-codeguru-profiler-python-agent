@@ -88,7 +88,7 @@ class TestWhenThereAreMoreThreadsThanMaxThreads(TestSampler):
             ),
         ]
 
-        assert (self.mock_get_stacks.call_args in allowed_results)
+        assert (self.mock_get_stacks.call_args in sorted(allowed_results))
 
     def test_it_includes_the_number_of_threads_it_attempted_to_sample_and_how_many_in_total_were_seen_in_the_system(
             self):
