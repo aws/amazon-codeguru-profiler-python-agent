@@ -58,10 +58,10 @@ class Sampler:
     def _get_all_threads(self):
         return self._thread_lister._current_frames().items()
 
-   def _threads_to_sample_from(self, all_threads):
-       if len(all_threads) > self._max_threads:
-           if isinstance(all_threads, dict):
+    def _threads_to_sample_from(self, all_threads):
+        if len(all_threads) > self._max_threads:
+            if isinstance(all_threads, dict):
                all_threads = list(all_threads.keys())
-           return random.sample(all_threads, self._max_threads)
-       else:
+            return random.sample(all_threads, self._max_threads)
+        else:
            return list(all_threads)
