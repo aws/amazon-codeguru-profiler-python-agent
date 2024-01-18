@@ -79,7 +79,7 @@ class TestEndToEndProfileAndSaveToFile:
                         
             with (open(resulting_profile_path)) as profiling_result_file:
                 file_content = profiling_result_file.read()
-                print("Content of the profile file: %s", file_content)
+                print("Content of the profile file (length:", len(file_content), "):", repr(file_content))
 
             try: 
                 print("Loading profile as JSON...")
