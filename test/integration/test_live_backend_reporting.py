@@ -28,8 +28,6 @@ from codeguru_profiler_agent.model.sample import Sample
 class TestLiveBackendReporting:
     @before
     def before(self):
-        if (platform.system == "Darwin"): 
-            print(socket.getfqdn())
         now_millis = int(time.time()) * 1000
         five_minutes_ago_millis = now_millis - (5 * 60 * 1000)
         sample = Sample(
@@ -66,6 +64,8 @@ class TestLiveBackendReporting:
             cpu_limit_percentage=self.environment["cpu_limit_percentage"])
 
     def test_beta_endpoint_call_report_and_refresh_and_do_not_override_user_overrides_agent_configuration(self):
+        if (platform.system == "Darwin"): 
+            print(socket.getfqdn())
         self.environment["agent_config_merger"] = AgentConfigurationMerger(user_overrides=self.agent_config)
 
         sdk_reporter = SdkReporter(self.environment)
