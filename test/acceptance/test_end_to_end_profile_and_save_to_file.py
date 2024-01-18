@@ -34,6 +34,9 @@ def frames_in_callgraph_are_in_expected_order(node, parent_frame, child_frame):
 class TestEndToEndProfileAndSaveToFile:
     @before
     def before(self):
+
+        logging.basicConfig(level=logging.INFO)
+        
         self.temporary_directory = tempfile.mkdtemp()
 
         helper = HelperThreadRunner()
