@@ -83,7 +83,7 @@ class TestEndToEndProfileAndSaveToFile:
 
             try: 
                 print("Loading profile as JSON...")
-                resulting_json = json.load(file_content)
+                resulting_json = json.loads(file_content)
             except json.JSONDecodeError as e:
                 print("Error decoding JSON: %s", str(e))
                 raise
