@@ -2,6 +2,7 @@ import boto3
 import pytest
 import socket
 import time
+import platform
 
 from datetime import timedelta
 
