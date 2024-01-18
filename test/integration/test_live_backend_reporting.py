@@ -27,6 +27,8 @@ from codeguru_profiler_agent.model.sample import Sample
 class TestLiveBackendReporting:
     @before
     def before(self):
+        if (platform.system == "Darwin"): 
+            print(socket.getfqdn())
         now_millis = int(time.time()) * 1000
         five_minutes_ago_millis = now_millis - (5 * 60 * 1000)
         sample = Sample(
