@@ -3,6 +3,7 @@ import platform
 import shutil
 import tempfile
 import os
+import logging
 
 from datetime import timedelta
 from unittest.mock import patch
@@ -14,6 +15,7 @@ from codeguru_profiler_agent.agent_metadata.agent_metadata import AgentMetadata,
 from test.help_utils import HelperThreadRunner, DUMMY_TEST_PROFILING_GROUP_NAME, FILE_PREFIX
 from test.pytestutils import before
 
+logger = logging.getLogger(__name__)
 
 def frames_in_callgraph_are_in_expected_order(node, parent_frame, child_frame):
     if not "children" in node:
@@ -63,8 +65,10 @@ class TestEndToEndProfileAndSaveToFile:
                 })
 
             try:
+                logger.info("Starting the profiler...")
                 profiler.start()
             finally:
+                logger.info("Stopping the profiler...")
                 profiler.stop()
 
             test_end_time = time_utils.current_milli_time()
@@ -74,7 +78,15 @@ class TestEndToEndProfileAndSaveToFile:
                      os.listdir(self.temporary_directory)[0]))
 
             with (open(resulting_profile_path)) as profiling_result_file:
-                resulting_json = json.loads(profiling_result_file.read())
+                file_content = profiling_result_file.read()
+                logger.debug("Content of the profile file: %s", file_content)
+
+            try: 
+                logger.info("Loading profile as JSON...")
+                resulting_json = json.load(file_content)
+            except json.JSONDecodeError as e:
+                logger.error("Error decoding JSON: %s", str(e))
+                raise
 
             self.assert_valid_agent_metadata(resulting_json["agentMetadata"])
             assert test_start_time <= resulting_json["start"] <= resulting_json["end"] <= test_end_time
