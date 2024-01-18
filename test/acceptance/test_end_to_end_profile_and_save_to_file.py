@@ -59,7 +59,7 @@ class TestEndToEndProfileAndSaveToFile:
             profiler = Profiler(
                 profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
-                    "initial_sampling_interval": timedelta(0, 780),
+                    "initial_sampling_interval": timedelta(),
                     "reporting_mode": "file",
                     "file_prefix": file_prefix,
                     'agent_metadata': AgentMetadata(fleet_info=DefaultFleetInfo())
