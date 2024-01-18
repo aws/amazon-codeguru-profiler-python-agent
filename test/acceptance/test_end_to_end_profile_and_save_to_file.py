@@ -51,8 +51,10 @@ class TestEndToEndProfileAndSaveToFile:
 
             file_prefix = str(Path(self.temporary_directory, FILE_PREFIX))
 
-            test_start_time = time_utils.current_milli_time()
+            print(file_prefix)
 
+            test_start_time = time_utils.current_milli_time()
+                        
             profiler = Profiler(
                 profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
@@ -73,6 +75,8 @@ class TestEndToEndProfileAndSaveToFile:
                 Path(self.temporary_directory,
                      os.listdir(self.temporary_directory)[0]))
 
+            print(resulting_profile_path)
+                        
             with (open(resulting_profile_path)) as profiling_result_file:
                 resulting_json = json.loads(profiling_result_file.read())
 
