@@ -78,7 +78,15 @@ class TestEndToEndProfileAndSaveToFile:
             print(resulting_profile_path)
                         
             with (open(resulting_profile_path)) as profiling_result_file:
-                resulting_json = json.loads(profiling_result_file.read())
+                file_content = profiling_result_file.read()
+                print("Content of the profile file: %s", file_content)
+
+            try: 
+                print("Loading profile as JSON...")
+                resulting_json = json.load(file_content)
+            except json.JSONDecodeError as e:
+                print("Error decoding JSON: %s", str(e))
+                raise
 
             self.assert_valid_agent_metadata(resulting_json["agentMetadata"])
             assert test_start_time <= resulting_json["start"] <= resulting_json["end"] <= test_end_time
