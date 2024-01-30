@@ -5,54 +5,53 @@ name: Run tests
 
 on:
   push:
-    branches: [ '*' ]
+    branches: ["*"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        os: [ubuntu-20.04, windows-latest, macos-latest]
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install pip
-      run: |
-        python -m pip install --upgrade pip
-    - name: Install dependencies for running tests
-      run: |
-        python -m pip install flake8 pytest pytest-print
-        python -m pip install mock httpretty six pympler
-    - name: Install dependencies for additional checks
-      run: |
-        python -m pip install bandit
-    - name: Install dependencies from requirements
-      run: |
-        pip install -r requirements.txt
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Run bandit
-      run: |
-        # run bandit to find common security issues
-        bandit -r codeguru_profiler_agent
-    - name: Run a specific test with logs
-      run: |
-        pytest -vv -o log_cli=true test/acceptance/test_live_profiling.py
-    - name: Run tests with pytest
-      run: |
-        pytest -vv
-        # For local testing, you can use pytest-html if you want a generated html report.
-        # python -m pip install pytest-html
-        # pytest -vv --html=pytest-report.html --self-contained-html
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install pip
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install dependencies for running tests
+        run: |
+          python -m pip install flake8 pytest pytest-print
+          python -m pip install mock httpretty six pympler
+      - name: Install dependencies for additional checks
+        run: |
+          python -m pip install bandit
+      - name: Install dependencies from requirements
+        run: |
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Run bandit
+        run: |
+          # run bandit to find common security issues
+          bandit -r codeguru_profiler_agent
+      - name: Run a specific test with logs
+        run: |
+          pytest -vv -o log_cli=true test/acceptance/test_live_profiling.py
+      - name: Run tests with pytest
+        run: |
+          pytest -vv
+          # For local testing, you can use pytest-html if you want a generated html report.
+          # python -m pip install pytest-html
+          # pytest -vv --html=pytest-report.html --self-contained-html
