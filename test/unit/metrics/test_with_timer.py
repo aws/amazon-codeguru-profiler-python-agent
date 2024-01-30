@@ -2,7 +2,7 @@ from test.pytestutils import before
 
 from codeguru_profiler_agent.metrics.with_timer import with_timer
 from codeguru_profiler_agent.metrics.timer import Timer
-
+import sys
 
 class TargetClass:
     def __init__(self):
@@ -14,6 +14,7 @@ class TargetClass:
 
     @with_timer(metric_name="test-foo-cpu", measurement="cpu-time")
     def foo_cpu(self):
+        sys.set_int_max_str_digits(0)
         # Run something to make sure the cpu clock does tick (https://bugs.python.org/issue37859)
         len(str(2 ** 500_000))
         return
