@@ -73,8 +73,6 @@ def _extract_stack(stack, max_depth):
         )
     if len(result) < max_depth:
         last_frame, last_frame_line_no = stack[-1]
-        if last_frame_line_no is None:
-            last_frame_line_no = -1
         _maybe_append_synthetic_frame(result, last_frame, last_frame_line_no)
     return result[:max_depth]
 
