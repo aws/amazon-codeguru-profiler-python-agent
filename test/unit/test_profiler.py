@@ -1,4 +1,5 @@
 import pytest
+import time
 from datetime import timedelta
 from unittest.mock import Mock
 from codeguru_profiler_agent.profiler import Profiler
@@ -153,6 +154,7 @@ class TestProfiler:
 
             def test_exceptions_are_caught_and_do_not_propagate(self):
                 self.profiler.start()
+                time.sleep(1)
                 assert (not self.profiler.stop())
 
         class TestWhenAnotherInstanceAlreadyStarted:
@@ -178,6 +180,7 @@ class TestProfiler:
 
             def test_stopping_first_instance_allows_next_profiler_to_start(self):
                 self.first_profiler.stop()
+                time.sleep(1)
                 assert self.second_profiler.start()
 
     class TestPause:
