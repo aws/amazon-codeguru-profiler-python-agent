@@ -1,6 +1,6 @@
 import boto3
 import pytest
-import socket
+import os
 import time
 import platform
 
@@ -20,8 +20,7 @@ from codeguru_profiler_agent.model.sample import Sample
 
 
 @pytest.mark.skipif(
-    socket.getfqdn().endswith("internal.cloudapp.net"),  # hosts running ubuntu and windows in GitHub
-    socket.getfqdn().startswith("Mac-"),  # hosts running macs in GitHub
+    os.getenv("GITHUB_ACTIONS") == "true",
     reason="This integration test is skipped on any shared fleet from Amazon or GitHub "
            "because it needs credentials to access the backend service. "
            "For information on how to run this locally, read the README.md file from the test/integration/ folder.")
