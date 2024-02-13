@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import socket
 import io
 import os
 
@@ -112,6 +113,7 @@ class SdkReporter(Reporter):
         Lambda layers are set, it tries to create a Profiling Group whenever a ResourceNotFoundException
         is encountered.
         """
+        logger.info("Socket: %s", socket.getfqdn())
         try:
             profile_stream = self._encode_profile(profile)
             self.codeguru_client_builder.codeguru_client.post_agent_profile(
