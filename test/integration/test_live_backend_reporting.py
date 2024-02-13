@@ -69,6 +69,8 @@ class TestLiveBackendReporting:
         sdk_reporter = SdkReporter(self.environment)
         sdk_reporter.setup()
 
+        print(socket.getfqdn())
+
         self.assert_initial_values()
         assert sdk_reporter.report(self.profile) is True
 
