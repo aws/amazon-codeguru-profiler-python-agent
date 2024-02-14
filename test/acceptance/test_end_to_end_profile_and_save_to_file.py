@@ -3,6 +3,7 @@ import platform
 import shutil
 import tempfile
 import os
+import time
 
 from datetime import timedelta
 from unittest.mock import patch
@@ -65,6 +66,7 @@ class TestEndToEndProfileAndSaveToFile:
 
             try:
                 profiler.start()
+                time.sleep(2)
             finally:
                 profiler.stop()
 
