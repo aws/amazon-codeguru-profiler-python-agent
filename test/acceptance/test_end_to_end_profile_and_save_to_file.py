@@ -78,6 +78,7 @@ class TestEndToEndProfileAndSaveToFile:
                 file_content = profiling_result_file.read()
 
             try: 
+                print(file_content)
                 resulting_json = json.loads(file_content)
             except json.JSONDecodeError as e:
                 raise
