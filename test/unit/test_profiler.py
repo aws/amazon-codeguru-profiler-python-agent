@@ -154,7 +154,6 @@ class TestProfiler:
 
             def test_exceptions_are_caught_and_do_not_propagate(self):
                 self.profiler.start()
-                time.sleep(1)
                 assert (not self.profiler.stop())
 
         class TestWhenAnotherInstanceAlreadyStarted:
