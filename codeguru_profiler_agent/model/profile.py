@@ -24,7 +24,7 @@ class Profile:
                                        memory_counter=self.memory_counter)
         self._validate_positive_number(start)
         self.start = start
-        logger.info("Start: " + current_milli_time(time.time()))
+        logger.info("Start: %d" % current_milli_time(time.time()))
         self.last_resume = start
         self.last_pause = None
         self._paused_ms = 0
@@ -106,7 +106,7 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
-        logger.info("end time: " + current_milli_time(clock=time.time()))
+        logger.info("end time: %d" % current_milli_time(clock=time.time()))
         self.end = current_milli_time(clock=self._clock)
 
     def set_overhead_ms(self, duration_timedelta):
