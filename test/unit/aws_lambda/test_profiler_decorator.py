@@ -86,7 +86,6 @@ class TestWithParameters:
             codeguru_profiler_agent.aws_lambda.profiler_decorator.clear_static_profiler()
         codeguru_profiler_agent.aws_lambda.profiler_decorator.clear_static_profiler()
 
-
     def test_given_profiling_group_is_used(self):
         self.handler({}, self.context)
         assert (codeguru_profiler_agent.aws_lambda.profiler_decorator._profiler._profiler_runner.collector

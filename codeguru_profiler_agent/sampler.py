@@ -64,4 +64,4 @@ class Sampler:
                all_threads = list(all_threads.keys())
             return random.sample(all_threads, self._max_threads)
         else:
-           return list(all_threads)
+            return list(all_threads)
