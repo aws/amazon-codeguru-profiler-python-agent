@@ -79,7 +79,6 @@ class LocalAggregator:
     def reset(self):
         self.errors_metadata.reset()
         self.timer.reset()
-        logger.info("Start at reset: %d" % current_milli_time(clock=self.clock))
         self.profile = self.profile_factory(
             profiling_group_name=self.profiling_group_name,
             sampling_interval_seconds=AgentConfiguration.get().sampling_interval.total_seconds(),

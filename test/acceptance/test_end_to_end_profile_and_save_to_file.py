@@ -54,7 +54,6 @@ class TestEndToEndProfileAndSaveToFile:
 
             test_start_time = time_utils.current_milli_time()
 
-
             profiler = Profiler(
                 profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
@@ -66,7 +65,7 @@ class TestEndToEndProfileAndSaveToFile:
 
             try:
                 profiler.start()
-                time.sleep(4)
+                time.sleep(2)
             finally:
                 profiler.stop()
 
@@ -75,7 +74,7 @@ class TestEndToEndProfileAndSaveToFile:
             resulting_profile_path = str(
                 Path(self.temporary_directory,
                      os.listdir(self.temporary_directory)[0]))
-                        
+
             with (open(resulting_profile_path)) as profiling_result_file:
                 file_content = profiling_result_file.read()
 

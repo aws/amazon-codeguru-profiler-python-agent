@@ -183,7 +183,6 @@ class Profiler:
                 reporter=SdkReporter(environment=environment),
                 environment=environment)
         elif reporting_mode == "file":
-            print("Using file reporter")
             return LocalAggregator(
                 reporter=FileReporter(environment=environment),
                 environment=environment)

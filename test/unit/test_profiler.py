@@ -1,5 +1,4 @@
 import pytest
-import time
 from datetime import timedelta
 from unittest.mock import Mock
 from codeguru_profiler_agent.profiler import Profiler
