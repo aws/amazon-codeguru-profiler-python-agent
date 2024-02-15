@@ -105,6 +105,7 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
+        
         self.end = current_milli_time(clock=self._clock)
 
     def set_overhead_ms(self, duration_timedelta):

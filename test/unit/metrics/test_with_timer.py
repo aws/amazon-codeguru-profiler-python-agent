@@ -14,9 +14,11 @@ class TargetClass:
     def foo_wall(self):
         return
 
+    # Run something to make sure the cpu clock does tick (https://bugs.python.org/issue37859)
     @with_timer(metric_name="test-foo-cpu", measurement="cpu-time")
     def foo_cpu(self):
-        # Run something to make sure the cpu clock does tick (https://bugs.python.org/issue37859)
+        # Call set_int_max_str for specific versions to test as its limited by CVE-2020-10735
+        # (https://docs.python.org/3/library/stdtypes.html#integer-string-conversion-length-limitation)
         if (sys.version_info >= (3, 7) and platform.system() != 'Windows') or (sys.version_info >= (3, 10) and platform.system() == 'Windows'):
             sys.set_int_max_str_digits(0)
         len(str(2 ** 500_000))
