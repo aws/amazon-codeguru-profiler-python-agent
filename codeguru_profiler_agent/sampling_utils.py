@@ -73,7 +73,10 @@ def _extract_stack(stack, max_depth):
         )
     if len(result) < max_depth:
         last_frame, last_frame_line_no = stack[-1]
-        _maybe_append_synthetic_frame(result, last_frame, last_frame_line_no)
+        # If the line_no is None, ignore the line as we can't get the line
+        # of code from the line cache
+        if last_frame_line_no != None: 
+            _maybe_append_synthetic_frame(result, last_frame, last_frame_line_no)
     return result[:max_depth]
 
 

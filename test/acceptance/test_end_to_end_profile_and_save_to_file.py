@@ -3,6 +3,7 @@ import platform
 import shutil
 import tempfile
 import os
+import time
 
 from datetime import timedelta
 from unittest.mock import patch
@@ -56,7 +57,7 @@ class TestEndToEndProfileAndSaveToFile:
             profiler = Profiler(
                 profiling_group_name=DUMMY_TEST_PROFILING_GROUP_NAME,
                 environment_override={
-                    "initial_sampling_interval": timedelta(),
+                    "initial_sampling_interval": timedelta(seconds=1),
                     "reporting_mode": "file",
                     "file_prefix": file_prefix,
                     'agent_metadata': AgentMetadata(fleet_info=DefaultFleetInfo())
@@ -64,6 +65,7 @@ class TestEndToEndProfileAndSaveToFile:
 
             try:
                 profiler.start()
+                time.sleep(2)
             finally:
                 profiler.stop()
 
@@ -74,7 +76,12 @@ class TestEndToEndProfileAndSaveToFile:
                      os.listdir(self.temporary_directory)[0]))
 
             with (open(resulting_profile_path)) as profiling_result_file:
-                resulting_json = json.loads(profiling_result_file.read())
+                file_content = profiling_result_file.read()
+
+            try: 
+                resulting_json = json.loads(file_content)
+            except json.JSONDecodeError as e:
+                raise
 
             self.assert_valid_agent_metadata(resulting_json["agentMetadata"])
             assert test_start_time <= resulting_json["start"] <= resulting_json["end"] <= test_end_time
