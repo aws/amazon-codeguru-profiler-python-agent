@@ -1,4 +1,5 @@
 import pytest
+import time
 import codeguru_profiler_agent.aws_lambda.profiler_decorator
 
 from unittest.mock import MagicMock
@@ -77,6 +78,7 @@ class TestWithParameters:
         @with_lambda_profiler(profiling_group_name="pg_name", region_name="eu-north-1",
                               environment_override={'cpu_limit_percentage': 42}, env=self.env)
         def handler_function(event, context):
+            time.sleep(0.5)
             return True
 
         self.handler = handler_function
