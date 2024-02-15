@@ -106,6 +106,7 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
+        time.sleep(2)
         logger.info("end time: %d" % current_milli_time(clock=time.time))
         self.end = current_milli_time(clock=self._clock)
 
