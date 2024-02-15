@@ -24,7 +24,7 @@ class Profile:
                                        memory_counter=self.memory_counter)
         self._validate_positive_number(start)
         self.start = start
-        print("Start: ", start)
+        logger.info("Start: ", time.time())
         self.last_resume = start
         self.last_pause = None
         self._paused_ms = 0
@@ -106,13 +106,13 @@ class Profile:
 
         for stack in sample.stacks:
             self._insert_stack(stack)
-        print("end time:", time.time())
+        logger.info("end time:", time.time())
         self.end = current_milli_time(clock=self._clock)
 
     def set_overhead_ms(self, duration_timedelta):
         """
         The overhead is the total cpu time spent profiling since start. It is measured by a Timer object and only passed
-        to the profile object before we report it so it is only added here because it is more convenient to convey this
+        to thoe profile object before we report it so it is only added here because it is more convenient to convey this
         data with the rest of the profile data.
         """
         self.overhead_ms = duration_timedelta.total_seconds() * 1000
