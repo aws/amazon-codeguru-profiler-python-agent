@@ -64,6 +64,8 @@ class LocalAggregator:
 
     @with_timer("aggregateThreadDumps")
     def _aggregate_sample(self, sample):
+        print("Sample: ", sample)
+        print("Profile: ", self.profile)
         self.profile.add(sample)
 
     def _check_memory_limit(self):

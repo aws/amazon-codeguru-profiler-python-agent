@@ -66,7 +66,6 @@ class TestEndToEndProfileAndSaveToFile:
 
             try:
                 profiler.start()
-                time.sleep(2)
             finally:
                 profiler.stop()
 

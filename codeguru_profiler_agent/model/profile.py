@@ -24,6 +24,7 @@ class Profile:
                                        memory_counter=self.memory_counter)
         self._validate_positive_number(start)
         self.start = start
+        print("Start: ", start)
         self.last_resume = start
         self.last_pause = None
         self._paused_ms = 0
