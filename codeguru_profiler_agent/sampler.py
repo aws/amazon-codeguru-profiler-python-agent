@@ -62,6 +62,6 @@ class Sampler:
         if len(all_threads) > self._max_threads:
             if isinstance(all_threads, dict):
                all_threads = list(all_threads.keys())
-            return random.sample(all_threads, self._max_threads)
+            return random.sample(all_threads, self._max_threads)  # nosec B311
         else:
             return list(all_threads)

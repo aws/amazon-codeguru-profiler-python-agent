@@ -16,21 +16,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         exclude:
+          # ubuntu-latest (24.04) doesn't support Python 3.6-3.7 (EOL)
           - os: ubuntu-latest
             python-version: '3.6'
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             python-version: '3.7'
-          - os: ubuntu-20.04
-            python-version: '3.8'
-          - os: ubuntu-20.04
-            python-version: '3.9'
-          - os: ubuntu-20.04
-            python-version: '3.10'
-          - os: ubuntu-20.04
-            python-version: '3.11'
+          # macos-latest (ARM64) doesn't support Python 3.6-3.7 (never built for ARM64)
+          - os: macos-latest
+            python-version: '3.6'
+          - os: macos-latest
+            python-version: '3.7'
 
     steps:
     - uses: actions/checkout@v3

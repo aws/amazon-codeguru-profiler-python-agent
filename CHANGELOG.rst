@@ -2,6 +2,10 @@
 CHANGELOG
 =========
 
+1.2.6 (layer_v13)
+===================
+* Add support for Python 3.12 and 3.13
+
 1.2.5 (layer_v12)
 ===================
 * Fix bug which causes agent to crash if line_no was None.
