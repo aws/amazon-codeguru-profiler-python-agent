@@ -69,5 +69,10 @@ class TestMemoryCounter:
             subject.count_create_node(frame="test/frame", file_path="test/file/path", class_name="TestClass")
             # [Oct-2020 Python-3.7.7] "test/frame" size: 59 bytes; "test/file/path" size: 63 bytes; "TestClass" size:
             # 58 bytes; fixed line_no size: 2 * 32 = 64; sum = 244
-            expected_size = subject.empty_node_size_bytes + 244
+            # [Dec-2025 Python-3.12+] Internal string memory optimization reduced size by 24 bytes; sum = 220
+            import sys
+            if sys.version_info >= (3, 12):
+                expected_size = subject.empty_node_size_bytes + 220
+            else:
+                expected_size = subject.empty_node_size_bytes + 244
             assert (subject.get_memory_usage_bytes() == expected_size)
