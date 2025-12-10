@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import functools
 from codeguru_profiler_agent.aws_lambda.lambda_context import LambdaContext
 
 _profiler = None
@@ -35,6 +36,7 @@ def with_lambda_profiler(profiling_group_name=None, region_name=None, environmen
         See Profiler class for details.
     """
     def function_decorator(function):
+        @functools.wraps(function)
         def profiler_decorate(event, context):
             start_time = datetime.now()
             global _profiler
