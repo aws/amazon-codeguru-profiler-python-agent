@@ -8,7 +8,7 @@ import json
 
 # The following values are used in the documentation, so any change of them requires updates to the documentation.
 LAYER_NAME = 'AWSCodeGuruProfilerPythonAgentLambdaLayer'
-SUPPORTED_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_VERSIONS = ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
 EXEC_SCRIPT_FILE_NAME = 'codeguru_profiler_lambda_exec'
 
 # We should release in all the regions that lambda layer is supported, not just the ones CodeGuru Profiler Service supports.
